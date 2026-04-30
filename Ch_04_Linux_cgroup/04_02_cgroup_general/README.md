@@ -4,7 +4,8 @@
 
 ```bash
 # Enter wk1 worker node
-ssh root@wk1
+aws ssm start-session --target <WK1_INSTANCE_ID> --region ap-northeast-2
+sudo su - root
 
 # Check cgroup v2 root directory
 ls /sys/fs/cgroup/ | head -10
