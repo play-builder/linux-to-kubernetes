@@ -143,6 +143,12 @@ cat /sys/fs/cgroup/kubepods.slice/cpu.weight
 cat /sys/fs/cgroup/kubepods.slice/kubepods-besteffort.slice/cpu.weight
 cat /sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/cpu.weight
 ```
+### Step-04-04: cpu.request on Control Plane (cp) and Worker Node (wk1)
+
+```bash
+kubectl describe node cp
+kubectl describe node wk1
+```
 
 ---
 
