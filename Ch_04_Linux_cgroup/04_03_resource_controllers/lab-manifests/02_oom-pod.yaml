@@ -7,7 +7,7 @@ spec:
   nodeName: wk1
   containers:
   - name: stress
-    image: playbuilder/stress:latest
+    image: playbuilder/stress:v1.0
     command: ["stress"]
     args: ["--vm", "1", "--vm-bytes", "200M", "--vm-hang", "1"]
     resources:
