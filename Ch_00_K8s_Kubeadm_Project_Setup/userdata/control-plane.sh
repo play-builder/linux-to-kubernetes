@@ -11,6 +11,12 @@ CALICO_VERSION="${calico_version}"
 
 ${common_script}
 
+# Install latest stable Docker CE 
+echo "=== Installing Docker CE at $(date) ==="
+apt-get install -y docker-ce docker-ce-cli docker-buildx-plugin docker-compose-plugin
+usermod -aG docker ubuntu
+systemctl enable docker
+
 echo "=== kubeadm init started at $(date) ==="
 
 kubeadm init \
