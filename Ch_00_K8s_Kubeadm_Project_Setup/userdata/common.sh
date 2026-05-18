@@ -1,8 +1,6 @@
-#!/bin/bash
 set -euxo pipefail
 
-exec > >(tee /var/log/kubeadm-bootstrap.log) 2>&1
-echo "=== Bootstrap started at $(date) ==="
+echo "=== Common bootstrap started at $(date) ==="
 
 hostnamectl set-hostname "${NODE_HOSTNAME}"
 
@@ -26,7 +24,6 @@ EOF
 sysctl --system
 
 apt-get update
-# CHANGED: jq + basic debugging/networking tools added
 apt-get install -y \
   ca-certificates curl gnupg \
   jq \
@@ -52,10 +49,8 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 
 apt-get update
 
-# --- containerd install (fixed: use apt-cache madison for exact version resolution) ---
 CONTAINERD_VERSION=""
 if CANDIDATES=$(apt-cache madison containerd.io 2>/dev/null); then
-  # Try 2.2.x first, then fall back to latest available
   CONTAINERD_VERSION=$(echo "$CANDIDATES" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | grep -m1 '^2\.2\.' || true)
 fi
 
@@ -83,18 +78,32 @@ echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] \
 apt-get update
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
-
 systemctl enable kubelet
 
-# --- kubecolor install (kubectl output colorizer) --- # ADDED
-echo "=== Installing kubecolor at $(date) ==="
+if apt-get install -y cri-tools; then
+  apt-mark hold cri-tools
+  echo "cri-tools installed from pkgs.k8s.io repo"
+else
+  echo "WARN: cri-tools package unavailable, falling back to GitHub release"
+  CRICTL_VERSION="v${KUBERNETES_VERSION}.0"
+  curl -fsSL -o /tmp/crictl.tar.gz \
+    "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz"
+  tar -xzf /tmp/crictl.tar.gz -C /usr/local/bin crictl
+  rm -f /tmp/crictl.tar.gz
+  echo "crictl ${CRICTL_VERSION} installed from GitHub release"
+fi
+
+echo "=== Installing kubecolor (optional) at $(date) ==="
 KUBECOLOR_VERSION="0.5.3"
-curl -fsSL -o /tmp/kubecolor.tar.gz \
-  "https://github.com/kubecolor/kubecolor/releases/download/v${KUBECOLOR_VERSION}/kubecolor_${KUBECOLOR_VERSION}_linux_amd64.tar.gz"
-tar -xzf /tmp/kubecolor.tar.gz -C /tmp kubecolor
-install -m 0755 /tmp/kubecolor /usr/local/bin/kubecolor
-rm -f /tmp/kubecolor.tar.gz /tmp/kubecolor /tmp/LICENSE
-echo "kubecolor v${KUBECOLOR_VERSION} installed"
+if curl -fsSL -o /tmp/kubecolor.tar.gz \
+      "https://github.com/kubecolor/kubecolor/releases/download/v${KUBECOLOR_VERSION}/kubecolor_${KUBECOLOR_VERSION}_linux_amd64.tar.gz" \
+   && tar -xzf /tmp/kubecolor.tar.gz -C /tmp kubecolor; then
+  install -m 0755 /tmp/kubecolor /usr/local/bin/kubecolor
+  echo "kubecolor v${KUBECOLOR_VERSION} installed"
+else
+  echo "WARN: kubecolor install failed — continuing without it"
+fi
+rm -f /tmp/kubecolor.tar.gz /tmp/kubecolor /tmp/LICENSE 2>/dev/null || true
 
 cat > /etc/crictl.yaml <<EOF
 runtime-endpoint: unix:///run/containerd/containerd.sock
@@ -102,21 +111,23 @@ image-endpoint: unix:///run/containerd/containerd.sock
 timeout: 10
 EOF
 
-# ADDED: shell aliases (k=kubectl, c=crictl, d=docker) with bash completion
-kubectl completion bash > /etc/bash_completion.d/kubectl
-crictl completion bash > /etc/bash_completion.d/crictl
-command -v docker &>/dev/null && docker completion bash > /etc/bash_completion.d/docker || true
+command -v kubectl &>/dev/null && kubectl completion bash > /etc/bash_completion.d/kubectl || true
+command -v crictl  &>/dev/null && crictl  completion bash > /etc/bash_completion.d/crictl  || true
+command -v docker  &>/dev/null && docker  completion bash > /etc/bash_completion.d/docker  || true
 
-cat >> /home/ubuntu/.bashrc <<'ALIAS_EOF'
-# kubecolor: colorized kubectl output wrapper
-alias kubectl="kubecolor"
-alias k=kubecolor
-complete -o default -F __start_kubectl kubectl
-complete -o default -F __start_kubectl k
-alias c=crictl
-complete -o default -F __start_crictl c
-alias d=docker
-command -v docker &>/dev/null && complete -o default -F __start_docker d
-ALIAS_EOF
+{
+  if command -v kubecolor &>/dev/null; then
+    echo 'alias kubectl="kubecolor"'
+    echo 'alias k=kubecolor'
+  else
+    echo 'alias k=kubectl'
+  fi
+  echo 'complete -o default -F __start_kubectl kubectl'
+  echo 'complete -o default -F __start_kubectl k'
+  echo 'alias c=crictl'
+  echo 'command -v crictl &>/dev/null && complete -o default -F __start_crictl c'
+  echo 'alias d=docker'
+  echo 'command -v docker &>/dev/null && complete -o default -F __start_docker d'
+} >> /home/ubuntu/.bashrc
 
 echo "=== Common setup completed at $(date) ==="
