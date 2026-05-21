@@ -24,6 +24,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: loadbalancer-web
+  labels:
+    app: loadbalancer-web
 spec:
   type: LoadBalancer # Triggers MetalLB to assign an EXTERNAL-IP
   selector:
