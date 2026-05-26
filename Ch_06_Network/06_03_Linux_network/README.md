@@ -23,9 +23,11 @@
 * ✅ Kubeadm 기반 K8s 클러스터 환경 구축
 
   참고: [Kubeadm Project Setup](https://github.com/play-builder/linux-to-kubernetes/tree/main/Ch_00_K8s_Kubeadm_Project_Setup)
-  
-* ✅ 노드 구성: `cp` (Control Plane), `wk1`, `wk2`
 
+* ✅ 노드 구성
+  * `cp` (Control Plane)
+  * `wk1`
+  * `wk2`
 
 ---
 
@@ -34,29 +36,42 @@
 이번 챕터에서는 Pod에서 출발한 패킷이 호스트 커널을 통과하며, 라우팅과 ARP를 거쳐 실제 목적지까지 도달하는 과정을 단계별로 추적합니다.
 
 > ⚠️ 이 Lab은 **Control Plane(cp)** 와 **Worker(wk1 / wk2)** 를 오가며 진행합니다.
+>
 > 각 Step마다 어느 노드에서 실행할지 명시되어 있습니다.
 
 ---
 
-## Step-01: 트래픽 발생용 파드 배포 (cp)
+## Step-01: [실습 준비] 트래픽 발생용 파드 배포 (cp)
 
 패킷의 여정을 시작할 출발지 파드를 생성합니다.
 
 ```bash
-kubectl run probe --image=playbuilder/netshoot:latest \
-  --overrides='{"spec":{"nodeName":"wk1"}}' \
-  --command -- sleep 600
+aws ssm start-session --target <CP_INSTANCE_ID> --region ap-northeast-2
 ```
 
 ```bash
-kubectl wait --for=condition=Ready pod/probe --timeout=60s
+sudo su - ubuntu
+```
+
+```bash
+kubectl run probe \
+--image=playbuilder/netshoot:latest \
+--overrides='{"spec":{"nodeName":"wk1"}}' \
+--command -- sleep 600
+```
+
+```bash
+kubectl wait \
+--for=condition=Ready \
+pod/probe \
+--timeout=60s
 ```
 
 ---
 
-## Step-02: 출발 — 파드의 가상 게이트웨이 확인 (cp)
+## Step-02: [출발] 파드의 가상 게이트웨이 확인 (cp)
 
-파드 내부 라우팅 테이블을 통해 첫 번째 목적지를 확인합니다.
+패킷의 첫 번째 목적지를 확인합니다.
 
 ```bash
 kubectl exec probe -- ip route
@@ -64,33 +79,93 @@ kubectl exec probe -- ip route
 
 **확인 포인트**
 
-* 기본 게이트웨이가 `169.254.1.1`로 설정되어 있는지 확인합니다.
+* 기본 게이트웨이가 `169.254.1.1`인지 확인
+* Calico가 파드 내부에 가상 게이트웨이를 주입했는지 확인
 
 ---
 
-## Step-03: 연결 고리 — veth, hostNetwork, proxy_arp (wk1)
+## Step-03: [연결 고리] veth 매핑, hostNetwork, proxy_arp 확인 (cp & wk1)
 
-파드와 호스트를 연결하는 구조를 확인합니다.
+### 전체 파드 배치 확인
 
-### 1. cali 인터페이스 확인
+```bash
+kubectl get pods -A -o wide
+```
+
+**확인 포인트**
+
+* 어떤 파드가 `wk1` 위에 떠 있는지 확인
+* 파드 IP 대역 확인
+
+---
+
+### wk1 노드 접속
+
+```bash
+aws ssm start-session \
+--target <WK1_INSTANCE_ID> \
+--region ap-northeast-2
+```
+
+```bash
+sudo su - root
+```
+
+---
+
+### cali 인터페이스 확인
 
 ```bash
 ip link show | grep cali
 ```
 
-### 2. hostNetwork 확인
+**확인 포인트**
+
+* Calico 인터페이스 개수 확인
+* 파드 수와 인터페이스 개수 관계 확인
+
+---
+
+### hostNetwork 확인
 
 ```bash
-# 일반 파드
-kubectl get pod probe -o yaml | grep hostNetwork
-
-# 시스템 파드
-kubectl get pod -n calico-system \
--l k8s-app=calico-node \
--o yaml | grep hostNetwork
+kubectl get pod <POD_NAME> \
+-n <NAMESPACE> \
+-o yaml \
+| grep hostNetwork
 ```
 
-### 3. proxy_arp 확인
+```bash
+kubectl get pod probe \
+-o yaml \
+| grep hostNetwork
+```
+
+```bash
+kubectl get pod calico-node-<SUFFIX> \
+-n calico-system \
+-o yaml \
+| grep hostNetwork
+```
+
+```bash
+kubectl get pod kube-proxy-<SUFFIX> \
+-n kube-system \
+-o yaml \
+| grep hostNetwork
+```
+
+**확인 포인트**
+
+* 일반 파드와 hostNetwork 파드 차이 확인
+
+---
+
+### proxy_arp 확인
+
+```bash
+cat /proc/sys/net/ipv4/conf/<INTERFACE>/proxy_arp
+```
 
 ```bash
 cat /proc/sys/net/ipv4/conf/cali<INTERFACE_SUFFIX>/proxy_arp
@@ -98,74 +173,142 @@ cat /proc/sys/net/ipv4/conf/cali<INTERFACE_SUFFIX>/proxy_arp
 
 **확인 포인트**
 
-* Calico 환경에서 파드 인터페이스가 L3 전달을 어떻게 보조하는지 확인합니다.
+* proxy_arp 값 확인
+* 호스트가 ARP 대리 응답하는 구조 확인
 
 ---
 
-## Step-04: 호스트 진입 — 커널 Netfilter 훅 (wk1)
+## Step-04: [호스트 진입] 커널 Netfilter 훅 통과 (wk1)
 
-패킷이 호스트 커널로 진입할 때 통과하는 체인을 확인합니다.
+패킷이 호스트 커널로 진입하면서 통과하는 체인을 확인합니다.
 
 ```bash
-iptables -t nat -L -n --line-numbers | head -25 | column -t
+iptables -t nat \
+-L \
+-n \
+--line-numbers \
+| head -25 \
+| column -t
 ```
 
 ```bash
-iptables -t nat -L PREROUTING -n --line-numbers | column -t
+iptables -t nat \
+-L PREROUTING \
+-n \
+--line-numbers \
+| column -t
 ```
 
 ```bash
-iptables -t filter -L FORWARD -n --line-numbers | column -t
+iptables -t filter \
+-L FORWARD \
+-n \
+--line-numbers \
+| column -t
 ```
 
 **확인 포인트**
 
-* `PREROUTING` 체인에서 `KUBE-SERVICES` 연결 여부를 확인합니다.
+* `PREROUTING` 체인 확인
+* `KUBE-SERVICES` 연결 여부 확인
 
 ---
 
-## Step-05: 목적지 변환 — DNAT 체인 추적 (wk1)
+## Step-05: [목적지 변환] KUBE-SERVICES 분기 및 DNAT 대상 검증 (wk1 & cp)
 
-ClusterIP가 실제 Pod IP로 변환되는 과정을 추적합니다.
-
-### 1. ClusterIP 규칙 찾기
-
-```bash
-iptables -t nat -L KUBE-SERVICES -n | grep <CLUSTER_IP>
-```
-
-### 2. KUBE-SVC 체인 확인
+### KUBE-SERVICES 확인
 
 ```bash
 iptables -t nat \
--L KUBE-SVC-<HASH> \
+-L KUBE-SERVICES \
 -n \
---line-numbers
+--line-numbers \
+| head -15 \
+| column -t
 ```
 
-### 3. Endpoint 확인
+---
+
+### DNS Service 규칙 찾기
 
 ```bash
 iptables -t nat \
--L KUBE-SEP-<HASH> \
+-L KUBE-SERVICES \
 -n \
---line-numbers
+| grep '10.96.0.10' \
+| grep 'udp dpt:53'
 ```
+
+---
+
+### SVC 체인 추출
+
+```bash
+SVC=$(iptables -t nat -L KUBE-SERVICES -n \
+| grep '10.96.0.10' \
+| grep 'udp dpt:53' \
+| awk '{print $1}')
+```
+
+```bash
+echo "SVC chain: $SVC"
+```
+
+```bash
+iptables -t nat \
+-L $SVC \
+-n \
+--line-numbers \
+| column -t
+```
+
+**확인 포인트**
+
+* DNS Service가 어떤 KUBE-SVC 체인으로 연결되는지 확인
+
+---
+
+### SEP 체인 추출
+
+```bash
+SEP=$(iptables -t nat -L $SVC -n \
+| grep 'KUBE-SEP' \
+| head -1 \
+| awk '{print $1}')
+```
+
+```bash
+echo "SEP chain: $SEP"
+```
+
+```bash
+iptables -t nat \
+-L $SEP \
+-n \
+--line-numbers \
+| column -t
+```
+
+**확인 포인트**
+
+* DNAT 대상 Pod IP 확인
+
+---
+
+### 실제 CoreDNS Pod 확인
 
 ```bash
 kubectl get pods -A -o wide \
-| grep <DNS_POD_IP>
+| grep dns
 ```
 
 **확인 포인트**
 
-* 서비스 IP가 실제 엔드포인트로 어떻게 변환되는지 확인합니다.
+* DNAT 대상 IP와 실제 CoreDNS IP 비교
 
 ---
 
-## Step-06: 상태 기록 — conntrack 장부 (wk1)
-
-NAT 변환 상태가 커널 내부에 어떻게 저장되는지 확인합니다.
+## Step-06: [상태 기록] Conntrack 장부와 타임아웃 (wk1)
 
 ```bash
 which conntrack \
@@ -173,20 +316,41 @@ which conntrack \
 ```
 
 ```bash
+conntrack -L \
+2>/dev/null \
+| head -5
+```
+
+```bash
 conntrack -L -p udp \
 2>/dev/null \
-| grep <CLUSTER_IP>
+| grep 10.96.0.10
 ```
 
 **확인 포인트**
 
-* NAT 이전/이후 주소 변환 정보가 기록되는지 확인합니다.
+* NAT 이전/이후 흐름 기록 확인
 
 ---
 
-## Step-07: 길 찾기 — 라우팅 테이블 및 FIB Trie (wk1)
+### UDP 타임아웃 확인
 
-패킷이 어느 인터페이스로 나갈지 확인합니다.
+```bash
+sysctl net.netfilter.nf_conntrack_udp_timeout
+```
+
+```bash
+sysctl net.netfilter.nf_conntrack_udp_timeout_stream
+```
+
+**확인 포인트**
+
+* UDP timeout 확인
+* stream timeout 확인
+
+---
+
+## Step-07: [길 찾기] 커널 라우팅 테이블 및 FIB Trie (wk1)
 
 ```bash
 ip route
@@ -197,40 +361,37 @@ ip route get <POD_IP>
 ```
 
 ```bash
+ip route get 10.244.242.67
+```
+
+**확인 포인트**
+
+* 어느 인터페이스로 나가는지 확인
+* next hop 확인
+
+---
+
+### FIB Trie 확인
+
+```bash
 cat /proc/net/fib_triestat
 ```
 
 **확인 포인트**
 
-* 라우팅 결과와 FIB Trie 구조를 함께 확인합니다.
+* Average depth 확인
+* Prefix 개수 확인
+* 커널 라우팅 탐색 구조 확인
 
 ---
 
-## Step-08: 물리 송출 및 경로 추적 — Traceroute (cp)
+## Step-08: [물리 송출 및 궤적 증명] Traceroute (cp & wk1)
 
-실제 패킷이 거치는 홉을 확인합니다.
-
-```bash
-kubectl exec probe \
--- traceroute -n <POD_IP>
-```
-
-**주의**
-
-방화벽 정책에 따라 `* * *` 로 보일 수 있습니다.
-
-필요 시 먼저 통신 여부를 확인합니다.
+### 커널 관점 경로 확인
 
 ```bash
-kubectl exec probe \
--- ping <POD_IP>
+ip route get 10.244.242.67
 ```
-
----
-
-## Step-09: ARP — IP에서 MAC으로 (wk1)
-
-다음 홉 MAC 주소 확인 과정을 추적합니다.
 
 ```bash
 ip neigh show
@@ -238,17 +399,43 @@ ip neigh show
 
 **확인 포인트**
 
-* `169.254.1.1`
-* 다른 노드 IP
-* 로컬 Pod IP
-
-각각 어떤 MAC 주소로 연결되는지 확인합니다.
+* next hop 확인
+* MAC 주소 확인
 
 ---
 
-## Step-10: Calico Direct Routing 구조 검증 (cp / wk1)
+### 실제 패킷 궤적 확인
 
-Calico L3 라우팅 구조를 확인합니다.
+```bash
+kubectl exec probe \
+-- traceroute -n 10.244.242.67
+```
+
+**확인 포인트**
+
+* 호스트 진입 확인
+* 노드 간 이동 확인
+* 최종 목적지 도착 확인
+
+---
+
+## Step-09: ARP — IP에서 MAC으로
+
+```bash
+kubectl exec probe \
+-- ip neigh show
+```
+
+**확인 포인트**
+
+* `169.254.1.1` MAC 확인
+* ARP cache 상태 확인
+* `REACHABLE`
+* `STALE`
+
+---
+
+## Step-10: 구조 검증 — L3 Routing 구조 확인 (cp)
 
 ```bash
 kubectl exec probe -- ip route
@@ -260,13 +447,12 @@ kubectl exec probe -- ip neigh show
 
 **확인 포인트**
 
-* Overlay 없이 직접 라우팅되는 구조를 확인합니다.
+* Overlay 사용 여부 확인
+* Direct Routing 구조 확인
 
 ---
 
-## Step-11: rp_filter 점검 (wk1)
-
-비대칭 경로에서 발생할 수 있는 패킷 드롭 여부를 확인합니다.
+## Step-11: 보안 검문 — rp_filter 점검 (wk1)
 
 ```bash
 sysctl \
@@ -278,18 +464,14 @@ nstat -az \
 | grep IPReversePathFilter
 ```
 
-**참고**
+**확인 포인트**
 
-* `1` = Strict Mode
-* `2` = Loose Mode
-
-Calico 환경에서는 일반적으로 Loose Mode를 사용합니다.
+* rp_filter 값 확인
+* 드롭 통계 확인
 
 ---
 
 ## Step-12: Cleanup (cp)
-
-실습 리소스를 정리합니다.
 
 ```bash
 kubectl delete pod probe \
@@ -297,3 +479,5 @@ kubectl delete pod probe \
 ```
 
 ---
+
+
