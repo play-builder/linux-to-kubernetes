@@ -107,6 +107,10 @@ cat /proc/sys/net/ipv4/conf/cali<INTERFACE_SUFFIX>/proxy_arp
 패킷이 호스트 커널로 진입할 때 통과하는 체인을 확인합니다.
 
 ```bash
+iptables -t nat -L -n --line-numbers | head -25 | column -t
+```
+
+```bash
 iptables -t nat -L PREROUTING -n --line-numbers | column -t
 ```
 
