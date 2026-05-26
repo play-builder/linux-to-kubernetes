@@ -390,7 +390,11 @@ cat /proc/net/fib_triestat
 ### 커널 관점 경로 확인
 
 ```bash
-ip route get 10.244.242.67
+ip route get <coreDNS_POD_IP>
+```
+
+```bash
+ip route get 10.244.242.66
 ```
 
 ```bash
@@ -405,10 +409,13 @@ ip neigh show
 ---
 
 ### 실제 패킷 궤적 확인
+```bash
+kubectl exec <POD_NAME> -- traceroute -n <coreDNS_POD_IP>
+```
 
 ```bash
 kubectl exec probe \
--- traceroute -n 10.244.242.67
+-- traceroute -n 10.244.242.66
 ```
 
 **확인 포인트**
