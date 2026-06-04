@@ -89,7 +89,7 @@ kubectl -n no-mesh get svc             # api Service ClusterIP 확인
 ## Step-03: 정상 동작 — 메시 없이도 통신은 된다 (cp)
 
 ```bash
-kubectl -n no-mesh exec client -- \
+kubectl -n no-mesh exec <POD_NAME> -- \
   curl -s -w "\nHTTP %{http_code}\n" http://api.no-mesh.svc.cluster.local/
 ```
 
