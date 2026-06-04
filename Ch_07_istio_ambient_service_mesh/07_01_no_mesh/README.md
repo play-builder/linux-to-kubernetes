@@ -131,7 +131,7 @@ tcpdump -i any -A -s 0 'tcp port 8080' -c 20    # -A: 페이로드 ASCII 출력,
 wk1의 tcpdump가 도는 동안, Control Plane에서 민감 정보를 쿼리스트링에 담아 호출합니다. (토큰·비밀번호가 URL에 실리는 상황을 모사)
 
 ```bash
-kubectl -n no-mesh exec client -- \
+kubectl -n no-mesh exec deploy/client -- \
   curl -s http://api.no-mesh.svc.cluster.local/?secret=password123
 ```
 
