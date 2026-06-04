@@ -98,7 +98,7 @@ terraform apply    # instance_type 변경은 인스턴스 교체를 유발
 aws ssm start-session --target <CP_INSTANCE_ID> --region ap-northeast-2
 sudo su - ubuntu
 
-cd linux-to-kubernetes/Ch_07_Ambient_Service_Mesh/scripts
+cd linux-to-kubernetes/Ch_07_istio_ambient_service_mesh/07_02_ambient/istio-setup-scripts
 bash install-istio-ambient.sh    # istioctl 1.30 → Gateway API CRD → profile=ambient → Ready 대기
 ```
 
@@ -128,8 +128,10 @@ kubectl -n istio-system get ds ztunnel
 매니페스트 맨 위에 Namespace 블록이 있어 `-n` 없이 그대로 배포하면 namespace 생성 + 메시 등록 + 배포가 한 번에 됩니다.
 
 ```bash
-cd ../07_02_ambient
-cat ambient-api.yaml    # 맨 위 Namespace에 istio.io/dataplane-mode: ambient 라벨
+cd ../
+
+../07_02_ambient$ ls
+README.md  ambient-api.yaml  ambient-client.yaml  istio-setup-scripts  verify-mtls.sh
 
 kubectl apply -f ambient-api.yaml -f ambient-client.yaml
 kubectl -n ambient-mesh get pods -o wide
@@ -258,17 +260,18 @@ curl -s localhost:15020/metrics | grep istio_tcp_connections_opened
 ---
 
 ## Step-13: [한계 3 해소] 메트릭 자동 수집 (cp)
-
 ```bash
-# 호출 5번 발생
-for i in 1 2 3 4 5; do
-  kubectl -n ambient-mesh exec deploy/client -- \
-    curl -s -o /dev/null http://api.ambient-mesh.svc.cluster.local/
-done
+# 터미널 A — port-forward 띄우고 그대로 유지 (이 창은 닫지 말 것)
+kubectl -n istio-system port-forward \
+  $(kubectl -n istio-system get pod -l app=ztunnel -o jsonpath='{.items[0].metadata.name}') \
+  15020:15020
 ```
 
 ```bash
-# 터미널 2 — 같은 조회 재실행
+# 터미널 B — port-forward가 떠 있는 동안 (먼저 호출 한 번) 
+bash generate-traffic.sh 
+
+# 터미널 B — 같은 조회 재실행
 curl -s localhost:15020/metrics | grep istio_tcp_connections_opened
 ```
 
@@ -284,15 +287,66 @@ curl -s localhost:15020/metrics | grep istio_tcp_connections_opened
 
 ---
 
-## Step-14: Cleanup (cp)
+## Step-14: [정밀 식별] 전용 ServiceAccount 부여 (cp)
+
+지금까지 client 신원은 namespace 기본 계정 `sa/default`였습니다. 특정 서비스만 정밀하게 식별하려면 전용 ServiceAccount를 부여합니다. 기존 `ambient-client.yaml`은 그대로 두고, `client-sa`를 가진 `secure-client`를 새 파일로 띄웁니다.
 
 ```bash
-kubectl delete -f ambient-api.yaml -f ambient-client.yaml    # namespace 라벨도 함께 사라져 메시 등록 해제
+cat ambient-secure-client.yaml    # 맨 위 ServiceAccount(client-sa) + Deployment(secure-client)에 serviceAccountName
+
+kubectl apply -f ambient-secure-client.yaml    # client-sa 생성 + secure-client 기동
+kubectl -n ambient-mesh get pods -l app=secure-client -o wide
+```
+
+```bash
+# ztunnel이 새 신원의 인증서를 발급했는지 확인
+ZTUNNEL_POD=$(kubectl get pod -n istio-system -l app=ztunnel -o jsonpath='{.items[0].metadata.name}')
+istioctl ztunnel-config certificates $ZTUNNEL_POD -n istio-system
+```
+
+무엇을 봐야 하나
+
+* `secure-client` Pod이 `1/1 Running` (기존 client와 별개로 나란히 기동)
+* ztunnel 인증서에 `spiffe://cluster.local/ns/ambient-mesh/sa/client-sa`가 새로 등록됨 — 전용 신원 확보의 직접 증거
+
+---
+
+## Step-15: [접근 통제] api 인가 정책 적용 (cp)
+
+전용 신원을 만들었으니, api가 이 신원의 호출만 받도록 AuthorizationPolicy를 적용합니다.
+
+```bash
+cat api-authz.yaml    # action: ALLOW, principals: .../sa/client-sa
+
+kubectl apply -f api-authz.yaml    # api에 "client-sa만 허용" 정책 적용
+```
+
+```bash
+# 전용 신원을 가진 secure-client에서 api 호출
+kubectl -n ambient-mesh exec deploy/secure-client -- \
+  curl -s -w "\nHTTP %{http_code}\n" http://api.ambient-mesh.svc.cluster.local/
+```
+
+무엇을 봐야 하나
+
+* secure-client → api 호출이 `Hello from API` + `HTTP 200` — `client-sa` 신원이 정책 허용 목록에 있어 통과
+* `api-authz.yaml`은 `app: api`에 적용되는 ALLOW 정책 — `principals`에 적힌 `client-sa`만 허용하고, 그 외 신원은 모두 자동 거부 (ALLOW 정책의 특성)
+* 허용 목록에 없는 신원으로 호출하면 프록시 단계에서 거부되어 연결이 맺어지지 않음 (curl 기준 빈 응답·연결 오류)
+* 정책 세분화(여러 신원 허용, 경로·메서드 조건 등)는 Part 3에서 다룸
+
+---
+
+## Step-16: Cleanup (cp)
+
+```bash
+# namespace를 지우면 안의 api·client·secure-client·client-sa가 모두 함께 삭제됨
+kubectl delete namespace ambient-mesh
 kubectl get ns ambient-mesh
 ```
 
 무엇을 봐야 하나
 
+* `NotFound`가 나오면 삭제 완료 — namespace 라벨이 사라져 메시 등록도 함께 해제됨
 * Istio 자체를 제거하려면 `istioctl uninstall --purge` (다음 실습을 위해 보통 유지)
 
 ---
