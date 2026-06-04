@@ -155,8 +155,8 @@ Step-05의 tcpdump 출력을 확인합니다.
 ## Step-08: [한계 2] 호출자 신원이 없음 (cp)
 
 ```bash
-kubectl -n no-mesh exec client -- \
-  curl -sv http://api.no-mesh.svc.cluster.local/ 2>&1 | grep -E "^> |^< "    # 요청(>)·응답(<) 헤더만 출력
+kubectl -n no-mesh exec deploy/client -- \
+    sh -c 'curl -sv http://api.no-mesh.svc.cluster.local/ 2>&1' | grep -E "^> |^< "
 ```
 
 무엇을 봐야 하나
