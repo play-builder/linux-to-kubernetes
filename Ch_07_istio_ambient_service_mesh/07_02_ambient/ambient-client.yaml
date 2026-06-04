@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: client
-  namespace: no-mesh
+  namespace: ambient-mesh
 spec:
   replicas: 1
   selector:
@@ -18,3 +18,4 @@ spec:
       - name: shell
         image: playbuilder/netshoot:latest
         command: ["sleep", "infinity"]
+ 
