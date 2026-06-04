@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  labels:
+    app: client
+spec:
+  nodeName: wk2
+  containers:
+  - name: shell
+    image: playbuilder/netshoot:latest
+    command: ["sleep", "infinity"]
