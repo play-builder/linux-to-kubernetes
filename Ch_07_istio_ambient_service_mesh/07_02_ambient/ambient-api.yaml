@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ambient-mesh
+  labels:
+    # 이 라벨 한 줄이 namespace 전체를 Ambient 메시에 등록한다.
+    # 라벨이 붙은 순간부터 이 namespace의 모든 Pod 트래픽이 ztunnel을 통과한다.
+    istio.io/dataplane-mode: ambient
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: ambient-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      nodeName: wk1
+      containers:
+      - name: api
+        image: hashicorp/http-echo:1.0
+        args: ["-text=Hello from API", "-listen=:8080"]
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: ambient-mesh
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 80
+    targetPort: 8080
+
