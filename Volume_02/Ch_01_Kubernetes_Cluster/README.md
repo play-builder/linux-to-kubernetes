@@ -58,7 +58,7 @@ sudo su - ubuntu
 ```
 
 ```bash
-cd linux-to-kubernetes/vol2/Ch_01_Kubernetes_Cluster
+cd linux-to-kubernetes/Volume_02/Ch_01_Kubernetes_Cluster
 ```
 
 ---
