@@ -1,0 +1,10 @@
+# survive-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: survive-test
+spec:
+  nodeName: wk1
+  containers:
+  - name: nginx
+    image: nginx

@@ -1,0 +1,20 @@
+# flow-test.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flow-test
+  labels:
+    app: flow-test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flow-test
+  template:
+    metadata:
+      labels:
+        app: flow-test
+    spec:
+      containers:
+      - name: nginx
+        image: nginx

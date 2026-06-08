@@ -1,0 +1,11 @@
+# dns-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dns-test
+spec:
+  restartPolicy: Never
+  containers:
+  - name: netshoot
+    image: playbuilder/netshoot:latest
+    command: ["sleep", "3600"]

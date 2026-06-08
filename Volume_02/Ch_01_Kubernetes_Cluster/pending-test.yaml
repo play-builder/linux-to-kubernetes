@@ -1,0 +1,11 @@
+# pending-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-test
+spec:
+  nodeSelector:
+    disktype: nonexistent      # 존재하지 않는 라벨 → 모든 노드 탈락 → Pending 재현
+  containers:
+  - name: nginx
+    image: nginx

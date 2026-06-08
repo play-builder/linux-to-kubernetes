@@ -1,0 +1,20 @@
+# recon-test.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recon-test
+  labels:
+    app: recon-test
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: recon-test
+  template:
+    metadata:
+      labels:
+        app: recon-test
+    spec:
+      containers:
+      - name: nginx
+        image: nginx

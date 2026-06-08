@@ -1,0 +1,18 @@
+# lifecycle-demo.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-demo
+spec:
+  terminationGracePeriodSeconds: 30
+  initContainers:
+  - name: init-wait
+    image: busybox
+    command: ["sh", "-c", "echo init; sleep 3"]
+  containers:
+  - name: app
+    image: nginx
+    lifecycle:
+      preStop:
+        exec:
+          command: ["sh", "-c", "echo preStop; sleep 5"]

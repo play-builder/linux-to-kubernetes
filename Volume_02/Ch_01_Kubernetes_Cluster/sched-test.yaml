@@ -1,0 +1,11 @@
+# sched-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sched-test
+  labels:
+    app: sched-test
+spec:
+  containers:
+  - name: nginx
+    image: nginx

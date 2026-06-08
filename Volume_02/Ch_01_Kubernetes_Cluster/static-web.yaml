@@ -1,0 +1,9 @@
+# static-web.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: static-web
+spec:
+  containers:
+  - name: web
+    image: nginx

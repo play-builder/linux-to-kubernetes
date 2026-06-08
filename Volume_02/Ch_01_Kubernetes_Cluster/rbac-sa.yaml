@@ -1,0 +1,6 @@
+# rbac-sa.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: limited-sa
+  namespace: default
