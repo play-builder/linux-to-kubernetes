@@ -5,7 +5,7 @@ metadata:
   name: pending-test
 spec:
   nodeSelector:
-    disktype: nonexistent      # 존재하지 않는 라벨 → 모든 노드 탈락 → Pending 재현
+    disktype: nonexistent      # 어느 노드에도 없는 라벨 → 배치 가능 노드 0 → Pending 재현
   containers:
   - name: nginx
     image: nginx

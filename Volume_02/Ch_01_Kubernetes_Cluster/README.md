@@ -28,20 +28,12 @@
   * `cp`
   * `wk1` 
   * `wk2`
-* ✅ 실습 매니페스트 
-  * `rbac-sa.yaml` · `rbac-role-binding.yaml` 
-  * `recon-test.yaml` · `sched-test.yaml` · `pending-test.yaml` 
-  * `flow-test.yaml` 
-  * `static-web.yaml` 
-  * `lifecycle-demo.yaml` 
-  * `dns-test.yaml`
-  * `survive-test.yaml` 
-
 ---
-
 # 🔬 Hands-on Lab — 클러스터 구조와 동작 추적
 
 `control plane` 4종과 노드 컴포넌트가 `kube-apiserver`를 축으로 어떻게 맞물리는지, 그리고 control/data plane이 어떻게 분리되는지를 단계별로 추적합니다.
+
+
 
 ---
 
@@ -189,32 +181,38 @@ sudo su - root
 ```
 
 ```bash
-export ETCDCTL_API=3
-export ETCDCTL_ENDPOINTS=https://127.0.0.1:2379
-export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt
-export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt
-export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key
+CONTAINER_ID=$(sudo crictl ps --name etcd -q)
+echo $CONTAINER_ID
 ```
 
 ```bash
-etcdctl get /registry/pods --prefix --keys-only \
-| head -10
+sudo crictl exec $CONTAINER_ID etcdctl \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+--endpoints=https://127.0.0.1:2379 \
+get /registry/pods --prefix --keys-only | head -10
 ```
 
 ```bash
-etcdctl snapshot save /tmp/etcd-backup.db
+sudo crictl exec $CONTAINER_ID etcdctl \
+--cacert=/etc/kubernetes/pki/etcd/ca.crt \
+--cert=/etc/kubernetes/pki/etcd/server.crt \
+--key=/etc/kubernetes/pki/etcd/server.key \
+--endpoints=https://127.0.0.1:2379 \
+snapshot save /var/lib/etcd/etcd-backup.db
 ```
 
 ```bash
-etcdctl snapshot status /tmp/etcd-backup.db \
+etcdctl snapshot status /var/lib/etcd/etcd-backup.db \
 --write-out=table
 ```
 
 **확인 포인트**
 
 * 모든 객체가 `/registry/` 아래 key로 저장됨
-* `apiserver-etcd-client`와 동일 자격으로 etcd 접근
-* `snapshot save` = 운영 필수 백업, `status`로 무결성 확인
+* etcd 컨테이너 내부 `etcdctl` 사용 = 호스트/클러스터 버전 불일치 회피
+* `snapshot save`(무중단 백업) → 호스트 `etcdctl`로 `status` 무결성 확인
 
 ---
 
@@ -231,7 +229,7 @@ kubectl apply -f recon-test.yaml
 ```
 
 ```bash
-kubectl delete pod \
+kubectl delete \
 $(kubectl get pod -l app=recon-test -o name | head -1)
 ```
 
@@ -283,11 +281,13 @@ kubectl delete -f pending-test.yaml
 ## Step-07: [전체 경로] 생성 흐름 이벤트 추적 (cp)
 
 ```bash
-kubectl get events -A -w &
+kubectl apply -f flow-test.yaml
 ```
 
 ```bash
-kubectl apply -f flow-test.yaml
+sleep 3
+kubectl get events --sort-by='.metadata.creationTimestamp' \
+| grep flow-test
 ```
 
 ```bash
@@ -296,14 +296,14 @@ kubectl get deploy,rs,pod -l app=flow-test
 
 **확인 포인트**
 
-* 이벤트 발신자 순서: `deployment-controller` → `replicaset-controller` → `default-scheduler` → `kubelet`
+* 발신자는 `REASON`+`OBJECT`로 식별: `ScalingReplicaSet`(deployment) → `SuccessfulCreate`(replicaset) → `Scheduled`(scheduler) → `Pulling`·`Started`(kubelet)
+* `--sort-by`는 같은 초 이벤트를 논리순서로 줄세우지 않음 → 줄 위치가 아니라 `AGE`로 진행 확인
 * 계층 생성: `Deployment` → `ReplicaSet` → `Pod`
 
 ### 정리
 
 ```bash
 kubectl delete -f flow-test.yaml
-kill %1
 ```
 
 ---
@@ -502,5 +502,4 @@ kubectl get pod survive-test
 ```bash
 kubectl delete -f survive-test.yaml --ignore-not-found
 ```
-
 
