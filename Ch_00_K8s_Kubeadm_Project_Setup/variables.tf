@@ -119,3 +119,10 @@ variable "calico_version" {
     error_message = "calico_version must be a valid Calico 3.x version (e.g. 3.31.4)."
   }
 }
+
+
+variable "use_spot" {
+  description = "Use Spot instances for workers (false = On-Demand)"
+  type        = bool
+  default     = true
+}

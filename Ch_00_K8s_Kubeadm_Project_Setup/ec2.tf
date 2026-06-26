@@ -19,6 +19,7 @@ locals {
   common_script = file("${path.module}/userdata/common.sh")
 }
 
+# Control Plane — 항상 온디맨드 (스팟 회수 시 클러스터 전체 마비 방지)
 resource "aws_instance" "control_plane" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.control_plane_instance_type
@@ -59,7 +60,8 @@ resource "aws_instance" "control_plane" {
   }
 }
 
-resource "aws_spot_instance_request" "workers" {
+# Worker — use_spot 토글 (평소 스팟, 필요할 때만 온디맨드)
+resource "aws_instance" "workers" {
   count = var.worker_count
 
   ami                    = data.aws_ami.ubuntu.id
@@ -71,8 +73,17 @@ resource "aws_spot_instance_request" "workers" {
   associate_public_ip_address = true
   source_dest_check           = false
 
-  spot_type            = "one-time"
-  wait_for_fulfillment = true
+  # use_spot = true  -> 이 블록 생성 -> 스팟
+  # use_spot = false -> for_each 빈 리스트 -> 블록 사라짐 -> 온디맨드
+  dynamic "instance_market_options" {
+    for_each = var.use_spot ? [1] : []
+    content {
+      market_type = "spot"
+      spot_options {
+        spot_instance_type = "one-time"
+      }
+    }
+  }
 
   root_block_device {
     volume_size           = var.ebs_volume_size
@@ -94,22 +105,4 @@ resource "aws_spot_instance_request" "workers" {
     Name = "${var.cluster_name}-worker-${count.index + 1}"
     Role = "worker"
   }
-}
-
-# ADDED: Fix spot instance source_dest_check not propagated to actual EC2 instance
-resource "terraform_data" "worker_source_dest_check" {
-  count = var.worker_count
-
-  triggers_replace = [aws_spot_instance_request.workers[count.index].spot_instance_id]
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      aws ec2 modify-instance-attribute \
-        --instance-id ${aws_spot_instance_request.workers[count.index].spot_instance_id} \
-        --no-source-dest-check \
-        --region ${var.aws_region}
-    EOT
-  }
-
-  depends_on = [aws_spot_instance_request.workers]
 }
