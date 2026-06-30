@@ -1,0 +1,25 @@
+# Circuit Breaker — api 서비스 (PART 6에서 붙인 waypoint에서 동작)
+# ambient에서 outlierDetection/connectionPool은 waypoint 계층에서 적용됨
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: api-circuit-breaker
+  namespace: shop
+spec:
+  host: api.shop.svc.cluster.local
+  trafficPolicy:
+    # 연결 풀 제한 (active circuit breaking — 풀 초과 시 503 fast-fail)
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 10s
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 10
+    # 이상 호스트 자동 퇴출 (passive circuit breaking)
+    outlierDetection:
+      consecutive5xxErrors: 5      # 연속 5xx 5회면 퇴출
+      interval: 10s                # 10초마다 스캔
+      baseEjectionTime: 30s        # 최소 30초 퇴출 (반복 시 배수 증가)
+      maxEjectionPercent: 50       # 최대 50%까지만 퇴출 (전체 마비 방지)

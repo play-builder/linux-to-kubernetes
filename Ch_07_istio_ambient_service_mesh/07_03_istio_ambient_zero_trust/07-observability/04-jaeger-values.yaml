@@ -1,0 +1,53 @@
+# 04-jaeger-values.yaml
+# jaegertracing/jaeger Helm chart 4.x (Jaeger v2) — AllInOne 배포 (Lab 단계)
+# ============================================================
+# 검증: helm template jaegertracing/jaeger --version 4.8.0 -f 04-jaeger-values.yaml
+#       → Deployment + Service + ServiceAccount 정상 렌더링 (이미지 jaeger:2.x)
+#
+# 중요 (chart 4.x 구조 변경):
+#   과거 chart는 allInOne:/agent:/collector: 키를 사용했으나,
+#   chart 4.x(Jaeger v2)는 단일 'jaeger:' 키로 통합되었다.
+#   이미지 tag는 비워두면(chart appVersion 사용) 검증된 버전이 적용된다.
+#   v1 태그(예: 1.55)를 명시하면 v2 chart와 충돌하므로 명시하지 않는다.
+#
+# 운영환경:
+#   - Production Strategy (Cassandra/Elasticsearch backend)
+#   - 또는 OpenTelemetry Collector + Tempo
+#
+# 설치:
+#   helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
+#   helm repo update
+#   kubectl create namespace observability
+#   helm install jaeger jaegertracing/jaeger -n observability \
+#     --version 4.8.0 -f 04-jaeger-values.yaml
+# ============================================================
+
+# AllInOne 단일 배포 (chart 4.x는 jaeger: 키로 통합)
+jaeger:
+  enabled: true
+  replicas: 1
+  image:
+    repository: jaegertracing/jaeger
+    tag: ""                    # 빈 값 = chart appVersion(검증된 v2) 사용
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  extraEnv:
+    # OTLP 수신 활성화 (Istio Telemetry가 OTLP로 전송)
+    - name: COLLECTOR_OTLP_ENABLED
+      value: "true"
+  service:
+    type: ClusterIP
+
+# storage 설정 생략 → chart 기본값(All-In-One in-memory) 자동 적용
+# 운영 영구 저장: storage.type: elasticsearch (또는 cassandra) + backend 설정
+
+# DataStore provisioning 비활성화 (메모리 backend이므로 불필요)
+provisionDataStore:
+  cassandra: false
+  elasticsearch: false
+  kafka: false

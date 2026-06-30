@@ -1,0 +1,9 @@
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: shop
+spec:
+  # selector 없음 → shop 네임스페이스 전체 적용
+  mtls:
+    mode: STRICT

@@ -1,0 +1,74 @@
+# 02-istio-servicemonitors.yaml
+# Prometheus Operator ServiceMonitor — Istio 컴포넌트 자동 수집
+# ============================================================
+#
+# kube-prometheus-stack은 ServiceMonitor CRD를 통해
+# scrape target을 동적으로 추가함. 매니페스트 한 번 적용으로
+# Prometheus가 istiod / ztunnel / cni 메트릭을 자동 수집.
+# ============================================================
+
+---
+# ── istiod 메트릭 수집 ─────────────────────────────────────
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istiod
+  namespace: istio-system
+  labels:
+    release: kube-prom              # kube-prometheus-stack의 selector
+spec:
+  jobLabel: istiod
+  selector:
+    matchLabels:
+      app: istiod
+  namespaceSelector:
+    matchNames: ["istio-system"]
+  endpoints:
+  - port: http-monitoring           # istiod Service의 포트 이름
+    interval: 30s
+    path: /metrics
+
+---
+# ── ztunnel 메트릭 수집 ────────────────────────────────────
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor                    # ztunnel은 DaemonSet → PodMonitor
+metadata:
+  name: ztunnel
+  namespace: istio-system
+  labels:
+    release: kube-prom
+spec:
+  jobLabel: ztunnel
+  selector:
+    matchLabels:
+      app: ztunnel
+  namespaceSelector:
+    matchNames: ["istio-system"]
+  podMetricsEndpoints:
+  - port: ztunnel-stats             # ztunnel chart 기본 포트 이름
+    interval: 30s
+    path: /stats/prometheus
+
+---
+# ── shop namespace 마이크로서비스 메트릭 수집 ──────────────
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: shop-apps
+  namespace: shop
+  labels:
+    release: kube-prom
+spec:
+  selector:
+    matchExpressions:
+    - key: app
+      operator: Exists
+  namespaceSelector:
+    matchNames: ["shop"]
+  podMetricsEndpoints:
+  # 애플리케이션이 노출한 메트릭 (있다면)
+  - port: http
+    interval: 30s
+    path: /metrics
+    # 메트릭이 없는 컨테이너에서 404 발생해도 무시
+    honorLabels: true

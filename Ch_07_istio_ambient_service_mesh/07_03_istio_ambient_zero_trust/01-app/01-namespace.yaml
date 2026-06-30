@@ -1,0 +1,10 @@
+# 01-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+  labels:
+    # Pod Security Standards — 가장 엄격한 restricted 수준 강제
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

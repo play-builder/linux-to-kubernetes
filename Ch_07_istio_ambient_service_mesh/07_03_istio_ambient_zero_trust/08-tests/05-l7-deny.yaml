@@ -1,0 +1,19 @@
+# L7 인가 검증 (차단): GET /orders — 정책 경로 밖 (403 기대 — waypoint가 enforce)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: l7-deny
+  namespace: shop
+spec:
+  restartPolicy: Never
+  serviceAccountName: frontend
+  containers:
+  - name: l7-deny
+    image: playbuilder/netshoot:latest
+    command: ["sh", "-c", "curl -s -o /dev/null -w '%{http_code}\\n' http://api.shop.svc.cluster.local:8080/orders"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 65532
+      capabilities: { drop: ["ALL"] }
+      seccompProfile: { type: RuntimeDefault }

@@ -1,0 +1,21 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: api-l7-get-only
+  namespace: shop
+spec:
+  # targetRef로 api 서비스에 attach (selector 아님!)
+  targetRefs:
+  - kind: Service
+    group: ""
+    name: api
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals:
+        - cluster.local/ns/shop/sa/frontend
+    to:
+    - operation:
+        methods: ["GET"]                  # GET 메서드만
+        paths: ["/products", "/healthz"]  # 이 경로만

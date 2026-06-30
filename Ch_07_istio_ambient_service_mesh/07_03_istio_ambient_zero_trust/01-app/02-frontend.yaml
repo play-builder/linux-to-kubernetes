@@ -1,0 +1,60 @@
+# 02-frontend.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend
+  namespace: shop
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: shop
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      serviceAccountName: frontend
+      containers:
+      - name: frontend
+        image: playbuilder/shop-frontend:v1.1.0
+        ports:
+        - containerPort: 8080
+        resources:
+          requests: { cpu: 50m, memory: 64Mi }
+          limits:   { memory: 128Mi }
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          capabilities: { drop: ["ALL"] }
+          seccompProfile: { type: RuntimeDefault }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: shop
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 8080
+    targetPort: 8080
+    appProtocol: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend
+  namespace: shop
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: frontend

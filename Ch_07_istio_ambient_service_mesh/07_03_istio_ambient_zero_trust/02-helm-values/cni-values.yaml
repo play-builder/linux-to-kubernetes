@@ -1,0 +1,10 @@
+profile: ambient
+# 로그 레벨은 차트 전역 키 global.logging.level 사용
+# (istio-cni 차트 기본값은 info — 운영에선 warning으로 낮춤)
+global:
+  logging:
+    level: warning
+cni:
+  ambient:
+    enabled: true
+  # privileged 컨테이너 필요 (kube-system이 아닌 istio-system에 두는 경우 PSS 면제 라벨 필요)

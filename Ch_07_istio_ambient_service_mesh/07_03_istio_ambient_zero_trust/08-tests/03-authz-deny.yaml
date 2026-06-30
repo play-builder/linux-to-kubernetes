@@ -1,0 +1,19 @@
+# L4 인가 검증 (차단): default 신원으로 api 호출 (000 기대 — 연결 거부)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: authz-deny
+  namespace: shop
+spec:
+  restartPolicy: Never
+  # serviceAccountName 미지정 → 기본값 'default' 사용 (frontend 아님)
+  containers:
+  - name: authz-deny
+    image: playbuilder/netshoot:latest
+    command: ["sh", "-c", "curl -s -o /dev/null -w '%{http_code}\\n' --max-time 5 http://api.shop.svc.cluster.local:8080/products; echo done"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 65532
+      capabilities: { drop: ["ALL"] }
+      seccompProfile: { type: RuntimeDefault }

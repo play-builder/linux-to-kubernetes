@@ -1,0 +1,15 @@
+# Loki — 경량 로그 수집 (관찰성 3대 축 중 '로그' 보완)
+# helm install loki grafana/loki-stack -f 03-loki-values.yaml
+# Promtail이 모든 노드의 Pod 로그를 수집 → Loki 저장 → Grafana에서 조회
+loki:
+  enabled: true
+  isDefault: false
+  persistence:
+    enabled: true
+    size: 10Gi
+promtail:
+  enabled: true                # 노드별 로그 수집 agent (DaemonSet)
+grafana:
+  enabled: false               # 기존 kube-prometheus-stack의 Grafana 재사용
+# Grafana에서 Loki를 데이터소스로 추가:
+#   URL: http://loki.logging.svc.cluster.local:3100

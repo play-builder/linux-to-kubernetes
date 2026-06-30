@@ -1,0 +1,18 @@
+# E2E 검증: Gateway → frontend → api 전체 체인 (JSON 응답 기대)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-test
+  namespace: shop
+spec:
+  restartPolicy: Never
+  containers:
+  - name: e2e-test
+    image: playbuilder/netshoot:latest
+    command: ["sh", "-c", "curl -s -w '\\nHTTP %{http_code}\\n' http://shop-gateway.istio-ingress.svc.cluster.local/"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 65532
+      capabilities: { drop: ["ALL"] }
+      seccompProfile: { type: RuntimeDefault }

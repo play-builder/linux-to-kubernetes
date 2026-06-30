@@ -1,0 +1,22 @@
+# ArgoCD Application — shop 앱을 Git 레포에서 자동 동기화
+# kubectl apply -f 가 아니라 Git 상태를 Source of Truth로 삼음
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shop-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/play-builder/linux-to-kubernetes.git
+    targetRevision: main
+    path: Ch_07_istio_ambient_service_mesh/07_03_istio_ambient_zero_trust/01-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: shop
+  syncPolicy:
+    automated:
+      prune: true        # Git에서 삭제된 리소스는 클러스터에서도 제거
+      selfHeal: true     # 수동 변경(drift) 감지 시 Git 상태로 자동 복구
+    syncOptions:
+    - CreateNamespace=false   # shop NS는 PSS 라벨 때문에 별도 관리

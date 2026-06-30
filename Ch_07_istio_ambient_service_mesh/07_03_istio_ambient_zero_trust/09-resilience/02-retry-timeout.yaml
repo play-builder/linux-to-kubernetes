@@ -1,0 +1,20 @@
+# Retry / Timeout — api 서비스 (waypoint L7에서 적용)
+# 일시적 실패 자동 재시도 + 무한 대기 방지
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: api-retry-timeout
+  namespace: shop
+spec:
+  hosts:
+  - api.shop.svc.cluster.local
+  http:
+  - route:
+    - destination:
+        host: api.shop.svc.cluster.local
+    # 전체 요청 타임아웃 (timeout stacking 방지)
+    timeout: 10s
+    retries:
+      attempts: 2                  # 최대 2회 재시도 (과도한 재시도 금지)
+      perTryTimeout: 3s            # 시도당 3초
+      retryOn: gateway-error,connect-failure,refused-stream

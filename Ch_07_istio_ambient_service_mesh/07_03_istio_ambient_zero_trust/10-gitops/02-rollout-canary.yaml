@@ -1,0 +1,53 @@
+# Argo Rollouts — api를 Canary로 점진 배포 (5% → 50% → 100%)
+# Deployment 대신 Rollout 리소스 사용. Istio waypoint가 가중치 트래픽 분할 수행
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: api
+  namespace: shop
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      serviceAccountName: api
+      containers:
+      - name: api
+        image: playbuilder/shop-api:v1.1.0
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 65532
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
+  strategy:
+    canary:
+      canaryService: api-canary
+      stableService: api
+      trafficRouting:
+        # Istio Gateway API(HTTPRoute) 기반 가중치 분할
+        plugins:
+          argoproj-labs/gatewayAPI:
+            httpRoute: api-route
+            namespace: shop
+      steps:
+      - setWeight: 5      # 5% canary
+      - pause: { duration: 60 }
+      - setWeight: 50     # 50% canary
+      - pause: { duration: 60 }
+      - setWeight: 100    # 100% 전환 (이후 stable로 승격)

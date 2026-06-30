@@ -1,0 +1,23 @@
+# api 워크로드에 ALLOW 정책 1개 → api는 default-deny로 flip
+# (별도 deny-all(DENY)은 만들지 않음: DENY는 ALLOW보다 먼저 평가되어
+#  rules:-{} 로 주면 frontend 트래픽까지 전부 차단되어 의도와 반대가 됨)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-frontend-to-api
+  namespace: shop
+spec:
+  selector:
+    matchLabels:
+      app: api                  # 이 정책은 api 워크로드에만 적용
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        # SPIFFE 신원 기반 — IP가 아닌 신원으로 식별
+        principals:
+        - cluster.local/ns/shop/sa/frontend
+    to:
+    - operation:
+        # L4 필드만 (포트). method/path는 waypoint에서.
+        ports: ["8080"]

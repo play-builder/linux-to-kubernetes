@@ -1,0 +1,39 @@
+profile: ambient
+pilot:
+  # 컨트롤 플레인 고가용성 — 최소 2개 replica 자동 유지
+  autoscaleEnabled: true
+  autoscaleMin: 2
+  autoscaleMax: 5
+  cpu:
+    targetAverageUtilization: 70
+  # 두 istiod를 서로 다른 노드에 분산 (단일 노드 장애 대비)
+  # 공식 chart 키 경로는 pilot.affinity (pilot.podAntiAffinity는 무시됨)
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app: istiod
+  # 자원 요청 / 제한
+  resources:
+    requests: { cpu: 500m, memory: 2048Mi }
+    limits:   { memory: 4096Mi }
+
+# meshConfig — 관찰성에서 참조할 provider 사전 정의
+meshConfig:
+  defaultConfig:
+    proxyMetadata: {}
+  enableTracing: true
+  extensionProviders:
+  # 분산 추적 → Jaeger(OTLP gRPC 4317, observability 네임스페이스)
+  - name: otel-tracing
+    opentelemetry:
+      service: jaeger.observability.svc.cluster.local
+      port: 4317
+  # 액세스 로그 → 표준출력
+  - name: envoy-accesslog
+    envoyFileAccessLog:
+      path: /dev/stdout

@@ -1,0 +1,10 @@
+profile: ambient
+logLevel: warn
+env:
+  # 노드 CPU에 맞춘 워커 스레드 수
+  ZTUNNEL_WORKER_THREADS: "2"
+  L7_ENABLED: "false"
+resources:
+  requests: { cpu: 200m, memory: 256Mi }
+  # CPU limit 없음 (throttle 시 노드 전체 네트워크 영향)
+  limits: { memory: 1024Mi }

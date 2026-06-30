@@ -1,0 +1,36 @@
+# 외부 진입 Gateway
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: shop-gateway
+  namespace: istio-ingress
+spec:
+  gatewayClassName: istio              # 외부 진입용 (waypoint 아님)
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: All
+---
+# frontend로 라우팅하는 HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: frontend-route
+  namespace: shop
+spec:
+  parentRefs:
+  - name: shop-gateway
+    namespace: istio-ingress
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: frontend
+      port: 8080
+    timeouts:
+      request: 10s                     # 요청 타임아웃

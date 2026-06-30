@@ -1,0 +1,13 @@
+# 회복력 메트릭(circuit breaker/retry/timeout) 노출용 meshConfig
+# helm upgrade istiod 시 -f 로 전달 → waypoint 재시작 후 적용
+# (참고: 별도 적용. 기본 메트릭만 필요하면 생략 가능)
+meshConfig:
+  defaultConfig:
+    proxyStatsMatcher:
+      inclusionRegexps:
+      - ".*outlier_detection.*"     # circuit breaker 퇴출
+      - ".*upstream_rq_retry.*"     # 재시도
+      - ".*upstream_rq_pending.*"   # 대기 큐
+      - ".*upstream_cx_.*"          # 연결 풀
+      inclusionSuffixes:
+      - "upstream_rq_timeout"       # 타임아웃

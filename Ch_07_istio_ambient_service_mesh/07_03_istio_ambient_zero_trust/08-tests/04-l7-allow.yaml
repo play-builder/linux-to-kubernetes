@@ -1,0 +1,19 @@
+# L7 인가 검증 (허용): GET /products (200 기대 — waypoint 필요)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: l7-allow
+  namespace: shop
+spec:
+  restartPolicy: Never
+  serviceAccountName: frontend
+  containers:
+  - name: l7-allow
+    image: playbuilder/netshoot:latest
+    command: ["sh", "-c", "curl -s -o /dev/null -w '%{http_code}\\n' http://api.shop.svc.cluster.local:8080/products"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 65532
+      capabilities: { drop: ["ALL"] }
+      seccompProfile: { type: RuntimeDefault }
