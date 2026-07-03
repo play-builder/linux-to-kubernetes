@@ -1,3 +1,13 @@
+# 경유 조건: Gateway 라벨 istio.io/ingress-use-waypoint=true + istiod env ENABLE_INGRESS_WAYPOINT_ROUTING
+# 본 실습 성립 근거: frontend→api(mesh 내부) 구간은 frontend의 ztunnel이 api waypoint로 전달
+# istio-ingress 네임스페이스 (+ ambient 편입 라벨)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-ingress
+  labels:
+    istio.io/dataplane-mode: ambient
+---
 # 외부 진입 Gateway
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway

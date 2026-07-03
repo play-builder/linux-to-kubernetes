@@ -1,0 +1,16 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: gateway-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.10.240-192.168.10.250   # 네트워크팀과 예약한 대역으로 교체
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: gateway-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools: [gateway-pool]
