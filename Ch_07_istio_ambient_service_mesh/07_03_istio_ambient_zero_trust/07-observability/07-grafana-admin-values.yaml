@@ -1,0 +1,7 @@
+# Grafana 관리자 암호를 Secret 참조로 전환 (adminPassword 평문 제거)
+grafana:
+  adminPassword: ""              # 평문 암호 무효화
+  admin:
+    existingSecret: grafana-admin-cred
+    userKey: admin-user
+    passwordKey: admin-password

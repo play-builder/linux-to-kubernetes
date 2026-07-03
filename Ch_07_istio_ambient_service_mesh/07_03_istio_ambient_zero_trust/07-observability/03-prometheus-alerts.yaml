@@ -1,10 +1,3 @@
-# 03-prometheus-alerts.yaml
-# Istio Ambient 운영 알람 규칙 (PrometheusRule CRD)
-# ============================================================
-#
-# Alertmanager가 이 규칙들을 PagerDuty / Slack / Email로 발송
-# ============================================================
-
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -14,159 +7,40 @@ metadata:
     release: kube-prom
 spec:
   groups:
-
-  # ── 1. ztunnel 가용성 ────────────────────────────────────
   - name: istio-ambient.ztunnel
     rules:
     - alert: ZtunnelDown
-      expr: |
-        kube_daemonset_status_number_unavailable{daemonset="ztunnel"} > 0
+      expr: absent(up{app="ztunnel"} == 1)
       for: 5m
-      labels:
-        severity: critical
-        component: istio-ambient
-      annotations:
-        summary: "ztunnel pod unavailable on at least one node"
-        description: >
-          ztunnel DaemonSet has {{ $value }} unavailable pods.
-          노드 단위 mTLS 트래픽이 끊김. 즉시 조사 필요.
-
-    - alert: ZtunnelHighMemory
-      expr: |
-        sum by (pod) (container_memory_working_set_bytes{namespace="istio-system", pod=~"ztunnel-.*"})
-          / sum by (pod) (kube_pod_container_resource_limits{namespace="istio-system", pod=~"ztunnel-.*", resource="memory"})
-          > 0.85
-      for: 10m
-      labels:
-        severity: warning
-        component: istio-ambient
-      annotations:
-        summary: "ztunnel memory usage above 85% on {{ $labels.pod }}"
-        description: >
-          ztunnel이 노드의 모든 Pod 네트워크를 처리하므로 OOM 시 영향 큼.
-          memory limit 상향 또는 노드 추가 검토.
-
-  # ── 2. istiod 가용성 ────────────────────────────────────
+      labels: { severity: critical }
+      annotations: { summary: "ztunnel 노드 프록시 다운" }
   - name: istio-ambient.istiod
     rules:
     - alert: IstiodDown
-      expr: |
-        kube_deployment_status_replicas_available{namespace="istio-system", deployment="istiod"} < 2
+      expr: absent(up{app="istiod"} == 1)
       for: 5m
-      labels:
-        severity: critical
-        component: istio-ambient
-      annotations:
-        summary: "istiod 가용 replica가 2개 미만"
-        description: >
-          새 Pod의 SPIFFE 인증서 발급 / 정책 변경 적용에 영향.
-
-    - alert: IstiodHighCPU
-      expr: |
-        rate(container_cpu_usage_seconds_total{namespace="istio-system", pod=~"istiod-.*"}[5m])
-          / on(pod) kube_pod_container_resource_limits{resource="cpu"}
-          > 0.8
-      for: 10m
-      labels:
-        severity: warning
-      annotations:
-        summary: "istiod CPU usage above 80% — HPA 작동 확인 필요"
-
-  # ── 3. 인증서 만료 ──────────────────────────────────────
-  # 주의: cert-manager 메트릭 이름은 'certmanager_'(한 단어)다.
-  #   'cert_manager_'(언더스코어)로 쓰면 메트릭이 매칭되지 않아 알람이 발화하지 않는다.
-  #   인증서 이름은 우리가 만든 Certificate 리소스 이름(istio-intermediate-ca)과 일치해야 한다.
+      labels: { severity: critical }
+      annotations: { summary: "istiod 컨트롤 플레인 다운" }
   - name: istio-ambient.certs
     rules:
-    - alert: IstioCAExpiringSoon
-      expr: |
-        (certmanager_certificate_expiration_timestamp_seconds{name="istio-intermediate-ca"} - time())
-          < 7 * 86400
+    - alert: IstioCertExpiringSoon
+      expr: (citadel_server_root_cert_expiry_timestamp - time()) / 86400 < 30
       for: 1h
-      labels:
-        severity: warning
-        component: istio-ambient
-      annotations:
-        summary: "Istio Intermediate CA expires within 7 days"
-        description: >
-          Intermediate CA(istio-intermediate-ca)가 7일 내 만료됩니다.
-          cert-manager 자동 갱신이 동작하는지, cacerts 키 매핑을 다시 수행했는지 확인하세요.
-    - alert: IstioCACertNotReady
-      expr: |
-        certmanager_certificate_ready_status{name="istio-intermediate-ca", condition="True"} == 0
-      for: 10m
-      labels:
-        severity: critical
-        component: istio-ambient
-      annotations:
-        summary: "Istio Intermediate CA is not Ready"
-        description: >
-          Intermediate CA가 Ready 상태가 아닙니다. mTLS 인증서 발급이 중단될 수 있습니다.
-
-  # ── 4. 트래픽 에러 (L7 — waypoint 필요) ──────────────────
-  # 주의: istio_requests_total / istio_request_duration_milliseconds_bucket는
-  #   L7(HTTP) 메트릭이라 waypoint를 거치는 트래픽에서만 생성된다(공식 문서).
-  #   ztunnel만 있는(waypoint 없는) 서비스는 이 알람이 동작하지 않는다.
-  #   → L4 전용 서비스는 아래 'istio-ambient.ztunnel-l4' 그룹의 TCP 알람으로 감시한다.
+      labels: { severity: warning }
+      annotations: { summary: "Istio Root CA 만료 30일 이내" }
   - name: istio-ambient.traffic
     rules:
-    - alert: HighErrorRate
+    - alert: HighL7ErrorRate
       expr: |
-        sum by (destination_service_name, destination_service_namespace) (
-          rate(istio_requests_total{response_code=~"5.."}[5m])
-        )
-          / sum by (destination_service_name, destination_service_namespace) (
-          rate(istio_requests_total[5m])
-        )
-          > 0.05
-      for: 5m
-      labels:
-        severity: warning
-      annotations:
-        summary: "5xx error rate > 5% for {{ $labels.destination_service_namespace }}/{{ $labels.destination_service_name }}"
-
-    - alert: HighLatency
-      expr: |
-        histogram_quantile(0.99,
-          sum by (destination_service_name, destination_service_namespace, le) (
-            rate(istio_request_duration_milliseconds_bucket[5m])
-          )
-        ) > 1000
+        sum(rate(istio_requests_total{response_code=~"5.."}[5m]))
+        / sum(rate(istio_requests_total[5m])) > 0.05
       for: 10m
-      labels:
-        severity: warning
-      annotations:
-        summary: "P99 latency > 1000ms for {{ $labels.destination_service_namespace }}/{{ $labels.destination_service_name }}"
-
-  # ── 5. ztunnel L4 트래픽 (waypoint 없는 서비스용) ────────
-  # ztunnel은 TCP 메트릭만 생성한다(istio_tcp_*, 공식 ztunnel 안정 API).
-  # waypoint가 없는 L4 전용 서비스는 5xx/latency 대신 연결 패턴으로 감시한다.
+      labels: { severity: warning }
+      annotations: { summary: "waypoint L7 5xx 에러율 5% 초과" }
   - name: istio-ambient.ztunnel-l4
     rules:
-    - alert: NoMtlsConnections
-      expr: |
-        sum(rate(istio_tcp_connections_opened_total{connection_security_policy="mutual_tls"}[5m])) == 0
-        and sum(rate(istio_tcp_connections_opened_total[5m])) > 0
+    - alert: ZtunnelConnectionSpike
+      expr: rate(istio_tcp_connections_opened_total[5m]) > 100
       for: 10m
-      labels:
-        severity: critical
-        component: istio-ambient
-      annotations:
-        summary: "mTLS로 보호되지 않은 TCP 연결이 발생 중"
-        description: >
-          연결은 있는데 mutual_tls로 분류된 연결이 0입니다.
-          PeerAuthentication STRICT가 적용됐는지, 평문 우회 트래픽이 없는지 확인하세요.
-
-    - alert: TcpConnectionSpike
-      expr: |
-        sum by (destination_service) (rate(istio_tcp_connections_opened_total[5m]))
-          > 3 * sum by (destination_service) (rate(istio_tcp_connections_opened_total[5m] offset 1h))
-      for: 10m
-      labels:
-        severity: warning
-        component: istio-ambient
-      annotations:
-        summary: "TCP 연결 급증: {{ $labels.destination_service }}"
-        description: >
-          1시간 전 대비 TCP 연결 생성률이 3배 이상입니다.
-          트래픽 급증 또는 연결 누수(connection leak) 가능성을 확인하세요.
+      labels: { severity: warning }
+      annotations: { summary: "ztunnel TCP 연결 급증(L4)" }

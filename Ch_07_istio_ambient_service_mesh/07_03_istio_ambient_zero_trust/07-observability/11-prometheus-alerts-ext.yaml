@@ -1,0 +1,67 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: istio-ambient-alerts-ext
+  namespace: monitoring
+  labels:
+    release: kube-prom
+spec:
+  groups:
+  - name: istio-ambient.istiod-ext
+    rules:
+    - alert: IstiodHADegraded
+      expr: count(up{app="istiod"} == 1) < 2
+      for: 5m
+      labels: { severity: critical }
+      annotations: { summary: "istiod 가용 replica < 2 — HA 훼손 (전멸 전 단계)" }
+    - alert: IstiodXdsRejects
+      expr: sum(rate(pilot_total_xds_rejects[5m])) > 0
+      for: 5m
+      labels: { severity: critical }
+      annotations: { summary: "프록시가 xDS 설정을 거부 중 — 정책 변경 미반영" }
+    - alert: IstiodPushLatencyHigh
+      expr: |
+        histogram_quantile(0.99,
+          sum(rate(pilot_proxy_convergence_time_bucket[5m])) by (le)) > 10
+      for: 10m
+      labels: { severity: warning }
+      annotations: { summary: "xDS 설정 전파 p99 > 10s — 임계는 실측 후 조정" }
+  - name: istio-ambient.ztunnel-ext
+    rules:
+    - alert: ZtunnelHighMemory
+      expr: |
+        max by (pod) (container_memory_working_set_bytes{
+          namespace="istio-system", pod=~"ztunnel-.*", container!=""})
+        / on (pod) group_left
+        max by (pod) (kube_pod_container_resource_limits{
+          namespace="istio-system", pod=~"ztunnel-.*", resource="memory"}) > 0.8
+      for: 10m
+      labels: { severity: warning }
+      annotations: { summary: "ztunnel 메모리 limit 80% 초과 — OOM 시 노드 mTLS 순단" }
+    - alert: ZtunnelRestarted
+      expr: |
+        increase(kube_pod_container_status_restarts_total{
+          namespace="istio-system", pod=~"ztunnel-.*"}[30m]) > 0
+      for: 0m
+      labels: { severity: warning }
+      annotations: { summary: "ztunnel 재시작 발생 — 해당 노드 기존 연결 단절 이력" }
+  - name: istio-ambient.certs-ext
+    rules:
+    - alert: IstioRootCertExpiryCritical
+      expr: (citadel_server_root_cert_expiry_timestamp - time()) / 86400 < 7
+      for: 1h
+      labels: { severity: critical }
+      annotations: { summary: "Istio Root CA 만료 7일 이내 — 즉시 교체 착수(D-30 경고 무시됨)" }
+    - alert: MeshWorkloadCertExpiring
+      expr: |
+        (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 21
+      for: 1h
+      labels: { severity: warning }
+      annotations: { summary: "cert-manager 관리 인증서 만료 21일 이내" }
+  - name: istio-ambient.pipeline
+    rules:
+    - alert: MeshMetricsAbsent
+      expr: absent(istio_tcp_connections_opened_total)
+      for: 15m
+      labels: { severity: warning }
+      annotations: { summary: "mesh L4 메트릭 실종 — 수집 파이프라인 자체 점검 필요" }

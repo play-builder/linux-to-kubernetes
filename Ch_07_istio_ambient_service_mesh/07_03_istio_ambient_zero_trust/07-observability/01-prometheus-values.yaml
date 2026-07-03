@@ -1,145 +1,25 @@
-# 01-prometheus-values.yaml
-# kube-prometheus-stack Helm chart 운영환경 값
-# ============================================================
-# 검증: helm template prometheus-community/kube-prometheus-stack --version 65.0.0
-#       -f 01-prometheus-values.yaml → 127개 리소스 정상 렌더링
-#       (retention 7d, NodePort 32000, serviceMonitorSelector {} 모두 반영 확인)
-#
-# 설치:
-#   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-#   helm repo update
-#   kubectl create namespace monitoring
-#   helm install kube-prom prometheus-community/kube-prometheus-stack \
-#     -n monitoring --version 65.0.0 -f 01-prometheus-values.yaml
-#
-# 포함되는 컴포넌트:
-#   - Prometheus
-#   - Grafana (Istio 4종 대시보드 자동 import 가능)
-#   - Alertmanager
-#   - kube-state-metrics
-#   - node-exporter
-# ============================================================
-
 fullnameOverride: kube-prom
-
-# ── Prometheus 본체 ────────────────────────────────────────
 prometheus:
-  # ── Service: Prometheus UI 외부 노출 (AWS SSM: 워커 퍼블릭 IP:30090) ──
-  # port-forward localhost는 SSM 세션에서 로컬 PC 브라우저로 접속 불가 → NodePort 사용
+  # Prometheus UI 외부 노출 (AWS SSM: 워커 퍼블릭 IP:30090)
   service:
     type: NodePort
     nodePort: 30090
   prometheusSpec:
     retention: 7d
     retentionSize: 10GiB
-
     resources:
-      requests:
-        cpu: 500m
-        memory: 2Gi
-      limits:
-        memory: 4Gi
-
-    # 모든 namespace의 ServiceMonitor / PodMonitor 수집
+      requests: { cpu: 500m, memory: 2Gi }
+      limits:   { memory: 4Gi }
+    # 모든 네임스페이스의 ServiceMonitor / PodMonitor / Rule 수집
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
-
-    # Prometheus가 Istio 메트릭을 수집할 수 있도록
-    # 기본 scrape interval
     scrapeInterval: 30s
     evaluationInterval: 30s
-
-    # ── PVC: 메트릭 영구 저장 ────────────────────────────
-    storageSpec:
-      volumeClaimTemplate:
-        spec:
-          accessModes: ["ReadWriteOnce"]
-          # AWS: ebs-csi가 설치되어 있으면 gp3 사용
-          # storageClassName: gp3
-          resources:
-            requests:
-              storage: 20Gi
-
-    # ── Pod 배치 ─────────────────────────────────────────
-    affinity:
-      podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: prometheus
-          topologyKey: kubernetes.io/hostname
-
-# ── Grafana ────────────────────────────────────────────────
 grafana:
   enabled: true
   adminPassword: "ChangeMeInProduction!"   # 운영: Secret으로 관리
-
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      memory: 512Mi
-
-  # ── Istio 공식 4종 대시보드 자동 import ─────────────────
-  # Grafana.com 대시보드 ID:
-  #   7639 — Istio Control Plane
-  #   7636 — Istio Mesh
-  #   7630 — Istio Workload
-  #   7636 — Istio Service
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-      - name: 'istio'
-        orgId: 1
-        folder: 'Istio'
-        type: file
-        disableDeletion: false
-        editable: true
-        options:
-          path: /var/lib/grafana/dashboards/istio
-
-  dashboards:
-    istio:
-      istio-control-plane:
-        gnetId: 7645
-        revision: 222
-        datasource: Prometheus
-      istio-mesh:
-        gnetId: 7639
-        revision: 222
-        datasource: Prometheus
-      istio-service:
-        gnetId: 7636
-        revision: 222
-        datasource: Prometheus
-      istio-workload:
-        gnetId: 7630
-        revision: 222
-        datasource: Prometheus
-
-  # ── Service: 외부 노출 방식 ──────────────────────────────
-  # Lab: NodePort (포트 30000~32767)
-  # 운영: Gateway API HTTPRoute로 노출 + OAuth Proxy
+  # Grafana UI 외부 노출 (AWS SSM: 워커 퍼블릭 IP:32000)
   service:
     type: NodePort
     nodePort: 32000
-
-# ── Alertmanager ──────────────────────────────────────────
-alertmanager:
-  alertmanagerSpec:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        memory: 128Mi
-
-# ── 노드 메트릭: node-exporter ────────────────────────────
-nodeExporter:
-  enabled: true
-
-kubeStateMetrics:
-  enabled: true
