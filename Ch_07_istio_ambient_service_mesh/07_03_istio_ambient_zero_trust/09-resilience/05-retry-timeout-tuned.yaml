@@ -1,0 +1,19 @@
+# (02의 운영 조정본 — 층위 부등식 결과: gateway backendRequest 3s 안에 수렴)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-retry-timeout
+  namespace: shop
+spec:
+  parentRefs:
+  - group: ""             # core group = Service (mesh 방식 — waypoint가 집행)
+    kind: Service
+    name: api
+    port: 8080
+  rules:
+  - timeouts:
+      request: 2500ms       # < gateway backendRequest 3s
+      backendRequest: 800ms # (3s−0.4s−0.1s)/3 ≈ 0.83s
+    backendRefs:
+    - name: api
+      port: 8080

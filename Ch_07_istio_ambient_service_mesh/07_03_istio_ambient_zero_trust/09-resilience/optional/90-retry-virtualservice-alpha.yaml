@@ -1,0 +1,25 @@
+# ⚠ 경고 — 비교/실험 전용 (운영 표준 아님)
+# - Ambient waypoint에서 VirtualService는 Istio 1.30 기준 Alpha.
+# - Gateway API 설정과 혼용 시 공식 미지원(undefined behavior).
+#   근거: https://istio.io/latest/docs/ambient/usage/l7-features/
+# - 09-resilience의 02/04/05(HTTPRoute) 및 10-gitops의
+#   HTTPRoute(api-route)와 동시 적용 금지.
+# - 실험은 HTTPRoute가 없는 격리 환경에서만 수행할 것.
+# (02-retry-timeout.yaml의 원본 VirtualService 사이클을 이전 보존)
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: api-retry-timeout
+  namespace: shop
+spec:
+  hosts:
+  - api.shop.svc.cluster.local
+  http:
+  - route:
+    - destination:
+        host: api.shop.svc.cluster.local
+    timeout: 10s
+    retries:
+      attempts: 2
+      perTryTimeout: 3s
+      retryOn: gateway-error,connect-failure,refused-stream

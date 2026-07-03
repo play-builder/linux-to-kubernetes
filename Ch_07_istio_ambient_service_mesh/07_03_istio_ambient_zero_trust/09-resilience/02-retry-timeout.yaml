@@ -1,20 +1,24 @@
-# Retry / Timeout — api 서비스 (waypoint L7에서 적용)
-# 일시적 실패 자동 재시도 + 무한 대기 방지
-apiVersion: networking.istio.io/v1
-kind: VirtualService
+# 운영 표준 — Gateway API HTTPRoute
+# (ambient waypoint의 공식 L7 구성 API — istio.io ambient l7-features)
+# timeouts.request/backendRequest는 Gateway API 표준 필드.
+# 재시도는 여기 선언하지 않음 — HTTPRoute retry 필드의 Standard
+# 승격 여부는 검증 불가. waypoint 기본 재시도(2회)의 총량 상한은
+# 03-retry-guard.yaml(DestinationRule maxRetries)로 통제.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: api-retry-timeout
   namespace: shop
 spec:
-  hosts:
-  - api.shop.svc.cluster.local
-  http:
-  - route:
-    - destination:
-        host: api.shop.svc.cluster.local
-    # 전체 요청 타임아웃 (timeout stacking 방지)
-    timeout: 10s
-    retries:
-      attempts: 2                  # 최대 2회 재시도 (과도한 재시도 금지)
-      perTryTimeout: 3s            # 시도당 3초
-      retryOn: gateway-error,connect-failure,refused-stream
+  parentRefs:
+  - group: ""             # core group = Service (mesh 방식 — waypoint가 집행)
+    kind: Service
+    name: api
+    port: 8080
+  rules:
+  - timeouts:
+      request: 10s        # 요청 전체 예산 (재시도 포함 상한)
+      backendRequest: 3s  # 백엔드 1회 시도 예산
+    backendRefs:
+    - name: api
+      port: 8080
