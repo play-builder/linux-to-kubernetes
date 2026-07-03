@@ -1,0 +1,9 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: shop-access-logging
+  namespace: shop                # shop NS(waypoint 포함)에만 적용
+spec:
+  accessLogging:
+  - providers:
+    - name: envoy-accesslog      # istiod values에 정의한 provider
