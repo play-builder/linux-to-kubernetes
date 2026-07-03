@@ -3,7 +3,7 @@ logLevel: warn
 env:
   # 노드 CPU에 맞춘 워커 스레드 수
   ZTUNNEL_WORKER_THREADS: "2"
-  L7_ENABLED: "false"
+  # L7 스위치는 없음 — ztunnel은 L3/L4 전용 (L7은 waypoint 담당)
 resources:
   requests: { cpu: 200m, memory: 256Mi }
   # CPU limit 없음 (throttle 시 노드 전체 네트워크 영향)
