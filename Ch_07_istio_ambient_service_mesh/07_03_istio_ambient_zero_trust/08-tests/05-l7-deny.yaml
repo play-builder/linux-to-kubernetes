@@ -1,4 +1,3 @@
-# L7 인가 검증 (차단): GET /orders — 정책 경로 밖 (403 기대 — waypoint가 enforce)
 apiVersion: v1
 kind: Pod
 metadata:

@@ -1,4 +1,5 @@
-# 부하 생성: api로 30회 요청 (메트릭/추적 데이터 생성용)
+# api로 30회 요청 발생 (메트릭·추적 데이터 생성 — L7 정책 통과를 위해 frontend 신원)
+# 고QPS 정량 부하(fortio)는 kubectl run fortio 패턴 사용
 apiVersion: v1
 kind: Pod
 metadata:

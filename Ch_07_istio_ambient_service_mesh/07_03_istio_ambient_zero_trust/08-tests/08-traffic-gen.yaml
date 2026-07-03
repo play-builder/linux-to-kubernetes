@@ -1,15 +1,16 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nettest
+  name: traffic-gen
   namespace: shop
+  labels:
+    app: traffic-gen
 spec:
   restartPolicy: Never
-  # 신원이 필요하면 spec.serviceAccountName: frontend 등을 추가
   containers:
-  - name: nettest
+  - name: traffic-gen
     image: playbuilder/netshoot:latest
-    command: ["curl", "-s", "http://frontend.shop.svc.cluster.local:8080"]
+    command: ["sh", "-c", "while true; do curl -s -o /dev/null http://frontend.shop.svc.cluster.local:8080; sleep 2; done"]
     securityContext:
       allowPrivilegeEscalation: false
       runAsNonRoot: true

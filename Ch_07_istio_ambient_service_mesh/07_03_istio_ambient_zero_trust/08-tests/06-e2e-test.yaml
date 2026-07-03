@@ -1,4 +1,5 @@
-# E2E 검증: Gateway → frontend → api 전체 체인 (JSON 응답 기대)
+# 외부 진입 E2E 체인 검증: Gateway → frontend → (ztunnel+waypoint) → api
+# 본문(JSON) + "HTTP 200" 출력 — 10-verify-all.sh의 e2e-200 판정이 이 출력을 사용
 apiVersion: v1
 kind: Pod
 metadata:
