@@ -1,11 +1,10 @@
-# 이미지 서명 검증 — Kyverno로 Cosign 서명된 이미지만 허용 (공급망 보안)
-# 서명 안 된 이미지의 Pod 생성을 admission 단계에서 차단
+# 도입 시 validationFailureAction을 Audit으로 시작해 관찰 후 Enforce로 전환 권장
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   name: verify-image-signatures
 spec:
-  validationFailureAction: Enforce   # Audit→경고만 / Enforce→차단
+  validationFailureAction: Enforce
   background: false
   webhookTimeoutSeconds: 30
   failurePolicy: Fail
@@ -25,7 +24,6 @@ spec:
       - count: 1
         entries:
         - keys:
-            # Cosign 공개키 (실제 운영은 KMS/Keyless OIDC 권장)
             publicKeys: |-
               -----BEGIN PUBLIC KEY-----
               MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE...REPLACE_WITH_REAL_KEY...

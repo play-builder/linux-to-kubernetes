@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kyverno-egress-restrict
+  namespace: kyverno
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+  - to:                                   # DNS
+    - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+    ports: [{protocol: UDP, port: 53}, {protocol: TCP, port: 53}]
+  - ports: [{protocol: TCP, port: 443}]   # API 서버 + 레지스트리(+Rekor/Fulcio)

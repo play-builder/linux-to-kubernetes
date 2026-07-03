@@ -1,0 +1,20 @@
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: legacy-batch-exception
+  namespace: kyverno            # 예외 리소스는 통제된 NS에만 (차트 값으로 제한)
+  annotations:
+    approved-by: "security-team"      # 승인 주체
+    ticket: "SEC-1234"                # 승인 근거 티켓
+    expires: "2026-08-01"             # 만료일 — 자동 만료 아님(주석+정기 리뷰로 집행)
+spec:
+  exceptions:
+  - policyName: verify-image-signatures
+    ruleNames:
+    - verify-shop-images
+  match:
+    any:
+    - resources:
+        kinds: [Pod]
+        namespaces: [shop]
+        names: ["legacy-batch-*"]     # 최대한 좁게 — 이름 패턴까지
