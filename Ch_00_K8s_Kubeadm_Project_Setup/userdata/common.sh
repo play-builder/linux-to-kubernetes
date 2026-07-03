@@ -105,6 +105,17 @@ else
 fi
 rm -f /tmp/kubecolor.tar.gz /tmp/kubecolor /tmp/LICENSE 2>/dev/null || true
 
+# --- bat install (cat replacement: syntax highlighting + line numbers) --- # ADDED
+echo "=== Installing bat at $(date) ==="
+if apt-get install -y bat; then
+  # Ubuntu/Debian ship the binary as 'batcat' (name clash with bacula-console-qt);
+  # symlink to 'bat' so the command works under sudo and in scripts.
+  ln -sf /usr/bin/batcat /usr/local/bin/bat
+  echo "bat installed ($(batcat --version 2>/dev/null | head -1))"
+else
+  echo "WARN: bat install failed — 'cat' alias will fall back to plain cat"
+fi
+
 cat > /etc/crictl.yaml <<EOF
 runtime-endpoint: unix:///run/containerd/containerd.sock
 image-endpoint: unix:///run/containerd/containerd.sock
@@ -114,6 +125,8 @@ EOF
 command -v kubectl &>/dev/null && kubectl completion bash > /etc/bash_completion.d/kubectl || true
 command -v crictl  &>/dev/null && crictl  completion bash > /etc/bash_completion.d/crictl  || true
 command -v docker  &>/dev/null && docker  completion bash > /etc/bash_completion.d/docker  || true
+
+command -v bat &>/dev/null && alias cat="bat --paging=never"
 
 {
   if command -v kubecolor &>/dev/null; then
@@ -131,3 +144,8 @@ command -v docker  &>/dev/null && docker  completion bash > /etc/bash_completion
 } >> /home/ubuntu/.bashrc
 
 echo "=== Common setup completed at $(date) ==="
+
+cat >> /root/.bashrc <<'ROOT_ALIAS_EOF'
+# bat: cat replacement (alias only if bat present); --paging=never = no pager in SSM
+command -v bat &>/dev/null && alias cat="bat --paging=never"
+ROOT_ALIAS_EOF
