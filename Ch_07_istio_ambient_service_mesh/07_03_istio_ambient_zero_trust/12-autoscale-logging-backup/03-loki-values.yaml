@@ -1,15 +1,37 @@
-# Loki — 경량 로그 수집 (관찰성 3대 축 중 '로그' 보완)
-# helm install loki grafana/loki-stack -f 03-loki-values.yaml
-# Promtail이 모든 노드의 Pod 로그를 수집 → Loki 저장 → Grafana에서 조회
+# (보강판 — Loki 3.7.x, grafana-community/loki 차트 기준, SingleBinary + retention/compactor)
+# 적용 전 helm show values grafana-community/loki 로 차트 버전별 스키마 확인 권장
+deploymentMode: SingleBinary          # 실습/소규모: 단일 프로세스 모드
 loki:
-  enabled: true
-  isDefault: false
+  auth_enabled: false                 # 단일 테넌트 (보안 절에서 보호책 적용)
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem                  # 실습: 로컬 PV / 프로덕션: S3 권장
+  schemaConfig:
+    configs:
+      - from: "2026-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+  limits_config:
+    retention_period: 336h            # 14일 보관
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+  compactor:
+    retention_enabled: true           # 만료 청크 실제 삭제 담당
+    delete_request_store: filesystem
+singleBinary:
+  replicas: 1
   persistence:
     enabled: true
-    size: 10Gi
-promtail:
-  enabled: true                # 노드별 로그 수집 agent (DaemonSet)
-grafana:
-  enabled: false               # 기존 kube-prometheus-stack의 Grafana 재사용
-# Grafana에서 Loki를 데이터소스로 추가:
-#   URL: http://loki.logging.svc.cluster.local:3100
+    size: 20Gi
+# SingleBinary 모드에서는 분산 컴포넌트를 0으로 고정
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0

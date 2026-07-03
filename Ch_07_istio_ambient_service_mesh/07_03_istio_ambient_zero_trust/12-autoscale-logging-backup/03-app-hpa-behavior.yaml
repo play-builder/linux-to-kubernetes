@@ -1,0 +1,40 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-hpa
+  namespace: shop
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0     # 확장은 즉시 (기본값과 동일)
+      policies:
+      - type: Percent
+        value: 100                      # 15초마다 최대 2배까지
+        periodSeconds: 15
+      - type: Pods
+        value: 4                        # 또는 15초마다 최대 +4개
+        periodSeconds: 15
+      selectPolicy: Max                 # 둘 중 더 많이 허용하는 쪽
+    scaleDown:
+      stabilizationWindowSeconds: 300   # 5분 관찰 후 축소 시작
+      policies:
+      - type: Percent
+        value: 50                       # 60초마다 최대 절반까지
+        periodSeconds: 60
+      - type: Pods
+        value: 2                        # 또는 60초마다 최대 -2개
+        periodSeconds: 60
+      selectPolicy: Min                 # 둘 중 더 보수적인 쪽 (완만한 축소)

@@ -1,0 +1,49 @@
+# (신규 — Alloy DaemonSet: 파드 로그 수집 → Loki 전송, Promtail EOL 대체)
+# 적용 전 helm show values grafana/alloy 및 Alloy 공식 문서로 스키마 확인 권장
+controller:
+  type: daemonset               # 노드마다 1개 — Promtail과 동일한 배치
+alloy:
+  configMap:
+    create: true
+    content: |
+      // ① 클러스터의 파드를 수집 대상으로 발견
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      // ② 쿠버네티스 메타라벨 → Loki 라벨로 정리
+      //    유지: namespace, app, container (저카디널리티만)
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app"]
+          target_label  = "app"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+      }
+
+      // ③ 파드 로그 수집 (kubelet API 경유 tail)
+      loki.source.kubernetes "pod_logs" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.default.receiver]
+      }
+
+      // ④ Loki로 전송
+      loki.write "default" {
+        endpoint {
+          url = "http://loki.logging.svc.cluster.local:3100/loki/api/v1/push"
+        }
+      }
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 512Mi

@@ -1,0 +1,16 @@
+# (신규 — 주간 장기 보관 백업: 일일 백업과 세대 혼합)
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: shop-weekly-backup
+  namespace: velero
+spec:
+  schedule: "0 3 * * 0"          # 매주 일요일 03:00 (일일 02:00과 분산)
+  template:
+    includedNamespaces:
+    - shop
+    - istio-system
+    - cert-manager
+    storageLocation: default
+    ttl: 720h0m0s                # 30일 보관
+    snapshotVolumes: true

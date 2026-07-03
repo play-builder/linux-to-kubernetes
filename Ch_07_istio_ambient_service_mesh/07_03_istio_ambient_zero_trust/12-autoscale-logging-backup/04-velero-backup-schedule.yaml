@@ -1,17 +1,16 @@
-# Velero — 클러스터 백업/DR (네임스페이스 리소스 + PV 스냅샷)
-# 사전: velero install (AWS S3 백업 위치 + EBS 스냅샷 플러그인)
+# 선행: velero install 완료 + BackupStorageLocation(default)이 Available 상태여야 함
 apiVersion: velero.io/v1
 kind: Schedule
 metadata:
   name: shop-daily-backup
   namespace: velero
 spec:
-  schedule: "0 2 * * *"        # 매일 02:00 백업
+  schedule: "0 2 * * *"
   template:
     includedNamespaces:
     - shop
     - istio-system
     - cert-manager
     storageLocation: default
-    ttl: 168h0m0s              # 7일 보관
-    snapshotVolumes: true      # PV(EBS) 스냅샷 포함
+    ttl: 168h0m0s
+    snapshotVolumes: true
