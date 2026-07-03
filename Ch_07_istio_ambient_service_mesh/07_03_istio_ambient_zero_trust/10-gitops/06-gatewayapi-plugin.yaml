@@ -1,0 +1,34 @@
+# gatewayAPI 트래픽 플러그인 선언 + HTTPRoute 편집 RBAC
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argo-rollouts-config        # 이 이름을 컨트롤러가 찾음
+  namespace: argo-rollouts
+data:
+  trafficRouterPlugins: |-
+    - name: "argoproj-labs/gatewayAPI"
+      location: "https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/download/<버전>/gatewayapi-plugin-linux-amd64"
+      # <버전>: 2026-05 시점 최신 안정판 검증 불가 —
+      # 릴리스 페이지에서 확인 후 고정 (13장: 사내 미러 권장)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argo-rollouts-gatewayapi
+rules:
+- apiGroups: ["gateway.networking.k8s.io"]
+  resources: ["httproutes"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argo-rollouts-gatewayapi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argo-rollouts-gatewayapi
+subjects:
+- kind: ServiceAccount
+  name: argo-rollouts
+  namespace: argo-rollouts

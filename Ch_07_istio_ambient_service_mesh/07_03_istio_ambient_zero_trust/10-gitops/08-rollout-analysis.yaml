@@ -1,3 +1,4 @@
+# (02-rollout-canary.yaml의 갱신본 — 분석 연결 + 산정 기반 단계. 최종본)
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
@@ -42,9 +43,18 @@ spec:
           argoproj-labs/gatewayAPI:
             httpRoute: api-route
             namespace: shop
+      analysis:                        # ← 지표 게이트 (백그라운드)
+        templates:
+        - templateName: api-success-rate
+        startingStep: 1                # 5% 단계부터 상시 측정
+        args:
+        - name: service-name
+          value: api
       steps:
-      - setWeight: 5
-      - pause: { duration: 60 }
+      - setWeight: 5                   # 표본: RPS×5%×120s (1.1장)
+      - pause: { duration: 120 }
+      - setWeight: 25
+      - pause: { duration: 120 }
       - setWeight: 50
-      - pause: { duration: 60 }
+      - pause: {}                      # 무기한 — 사람 승인 게이트(9장)
       - setWeight: 100

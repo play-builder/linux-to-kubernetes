@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: shop-project
+  namespace: argocd
+spec:
+  description: shop 서비스 전용 경계 — 레포/대상/리소스 제한
+  sourceRepos:
+  - https://github.com/play-builder/linux-to-kubernetes.git
+  destinations:
+  - server: https://kubernetes.default.svc
+    namespace: shop
+  clusterResourceWhitelist: []       # 클러스터 스코프 리소스 생성 금지
+  namespaceResourceBlacklist:        # NS 안이라도 자원 통제 리소스는 금지
+  - group: ""
+    kind: ResourceQuota
+  - group: ""
+    kind: LimitRange

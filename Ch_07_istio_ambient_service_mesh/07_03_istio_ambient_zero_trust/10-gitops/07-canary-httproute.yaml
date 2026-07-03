@@ -1,0 +1,36 @@
+# canary Service + waypoint가 집행할 가중치 HTTPRoute (mesh parentRef)
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-canary
+  namespace: shop
+  labels:
+    app: api
+    istio.io/use-waypoint: api-waypoint   # canary 직접 호출도 동일 L7 경로
+spec:
+  selector:
+    app: api            # Rollouts가 여기에 세대 해시를 추가 주입
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-route
+  namespace: shop
+spec:
+  parentRefs:
+  - group: ""           # core group = Service (mesh 방식)
+    kind: Service
+    name: api
+    port: 8080
+  rules:
+  - backendRefs:
+    - name: api         # stable
+      port: 8080
+      weight: 100
+    - name: api-canary  # canary
+      port: 8080
+      weight: 0

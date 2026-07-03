@@ -1,20 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: shop-app
+  name: shop-root
   namespace: argocd
 spec:
-  project: default
+  project: shop-project
   source:
     repoURL: https://github.com/play-builder/linux-to-kubernetes.git
     targetRevision: main
-    path: Ch_07_istio_ambient_service_mesh/07_03_istio_ambient_zero_trust/01-app
+    path: Ch_07_istio_ambient_service_mesh/07_03_istio_ambient_zero_trust/10-gitops/apps
   destination:
     server: https://kubernetes.default.svc
-    namespace: shop
+    namespace: argocd            # 자식 Application이 생성될 곳
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-    - CreateNamespace=false
+    automated: { prune: true, selfHeal: true }

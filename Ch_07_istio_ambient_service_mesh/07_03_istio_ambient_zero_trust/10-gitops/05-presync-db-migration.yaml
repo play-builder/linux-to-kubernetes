@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: api-db-migrate
+  namespace: shop
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api
+      containers:
+      - name: migrate
+        image: playbuilder/shop-api:v1.1.0     # 예시: 마이그레이션 모드
+        command: ["node", "migrate.js"]        # 앱에 맞게 교체
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 65532
+          capabilities: { drop: ["ALL"] }
+          seccompProfile: { type: RuntimeDefault }

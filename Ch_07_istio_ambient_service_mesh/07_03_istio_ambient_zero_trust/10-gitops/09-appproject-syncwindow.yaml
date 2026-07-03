@@ -1,0 +1,27 @@
+# (10A 03-appproject-shop.yaml의 갱신본 — 금지 시간대 추가. 최종본)
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: shop-project
+  namespace: argocd
+spec:
+  description: shop 서비스 전용 경계 — 레포/대상/리소스 제한
+  sourceRepos:
+  - https://github.com/play-builder/linux-to-kubernetes.git
+  destinations:
+  - server: https://kubernetes.default.svc
+    namespace: shop
+  clusterResourceWhitelist: []
+  namespaceResourceBlacklist:
+  - group: ""
+    kind: ResourceQuota
+  - group: ""
+    kind: LimitRange
+  syncWindows:                     # ← 금지 시간대 (freeze)
+  - kind: deny
+    schedule: "0 18 * * 5"         # 매주 금요일 18:00 시작
+    duration: 62h                  # 월요일 08:00까지
+    timeZone: Asia/Seoul
+    applications:
+    - "*"                          # 이 프로젝트의 모든 앱
+    manualSync: true               # 긴급 수동 sync는 허용(기록 필수)
