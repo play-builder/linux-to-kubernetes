@@ -1,0 +1,39 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pki-certificate-expiry
+  namespace: monitoring
+  labels:
+    release: monitoring   # kube-prometheus-stack ruleSelector와 일치 필수
+spec:
+  groups:
+  - name: pki.certificates
+    rules:
+    - alert: CertManagerCertExpiringSoon
+      expr: |
+        (certmanager_certificate_expiration_timestamp_seconds - time())
+          < 21 * 86400
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "인증서 만료 21일 미만: {{ $labels.namespace }}/{{ $labels.name }}"
+        description: "renewBefore(30d) 자동 갱신이 실패했을 가능성 — cert-manager 로그와 CertificateRequest를 확인하세요."
+    - alert: CertManagerCertExpiryCritical
+      expr: |
+        (certmanager_certificate_expiration_timestamp_seconds - time())
+          < 7 * 86400
+      for: 15m
+      labels:
+        severity: critical
+      annotations:
+        summary: "인증서 만료 7일 미만 — 즉시 수동 개입: {{ $labels.namespace }}/{{ $labels.name }}"
+        description: "수동 재발급 후 cacerts 재매핑 필요 여부를 판단하세요."
+    - alert: CertManagerCertNotReady
+      expr: |
+        certmanager_certificate_ready_status{condition="False"} == 1
+      for: 30m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Certificate Ready 실패 30분 경과: {{ $labels.namespace }}/{{ $labels.name }}"
