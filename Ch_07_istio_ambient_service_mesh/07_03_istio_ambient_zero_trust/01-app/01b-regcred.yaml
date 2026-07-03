@@ -1,0 +1,20 @@
+# 생성 방법: kubectl create secret docker-registry regcred \
+#   --docker-server=<REGISTRY_SERVER> \
+#   --docker-username=<REGISTRY_USERNAME> \
+#   --docker-password='<REGISTRY_TOKEN>' \
+#   --namespace=shop \
+#   --dry-run=client -o yaml > 07_03_istio_ambient_zero_trust/01-app/01b-regcred.yaml
+#
+# 플레이스홀더: <REGISTRY_SERVER>   예) registry.example.com (Docker Hub는 https://index.docker.io/v1/)
+#               <REGISTRY_USERNAME> 예) deploy-bot 또는 <DOCKERHUB_USERNAME>
+#               <REGISTRY_TOKEN>    예) 레지스트리에서 발급한 pull 전용(read-only) 토큰
+# 참고: kubectl --dry-run 생성본은 base64 인코딩된 data:.dockerconfigjson 필드로 출력된다.
+#       아래는 동일한 Secret을 평문 stringData로 표현한 템플릿이며, 적용 시 서버가 base64로 변환한다.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: regcred
+  namespace: shop
+type: kubernetes.io/dockerconfigjson
+stringData:
+  .dockerconfigjson: '{"auths":{"<REGISTRY_SERVER>":{"username":"<REGISTRY_USERNAME>","password":"<REGISTRY_TOKEN>","auth":"<BASE64_OF_USERNAME_COLON_TOKEN>"}}}'
