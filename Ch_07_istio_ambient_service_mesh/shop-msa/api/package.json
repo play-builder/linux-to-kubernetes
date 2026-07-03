@@ -1,0 +1,9 @@
+{
+  "name": "shop-api",
+  "version": "1.0.0",
+  "description": "shop api service",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  }
+}
