@@ -37,3 +37,8 @@ meshConfig:
   - name: envoy-accesslog
     envoyFileAccessLog:
       path: /dev/stdout
+
+# 자동 배포되는 waypoint·gateway Pod에 seccompProfile 주입 → PSS restricted 통과
+gateways:
+  seccompProfile:
+    type: RuntimeDefault
