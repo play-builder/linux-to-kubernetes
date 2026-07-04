@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/02-helm-values/cni-values.yaml
 profile: ambient
 # 로그 레벨은 차트 전역 키 global.logging.level 사용
 # (istio-cni 차트 기본값은 info — 운영에선 warning으로 낮춤)

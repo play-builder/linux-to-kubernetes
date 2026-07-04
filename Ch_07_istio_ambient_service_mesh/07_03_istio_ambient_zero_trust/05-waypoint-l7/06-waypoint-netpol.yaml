@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/05-waypoint-l7/06-waypoint-netpol.yaml (선택)
 # waypoint Pod 인입을 HBONE(15008) + 헬스 프로브(15021)로 한정 — CNI 계층 이중 방어
 # ⚠ 적용 전 프로브 포트 실측 필수:
 #   kubectl get deploy api-waypoint -n shop -o yaml | grep -A3 readinessProbe

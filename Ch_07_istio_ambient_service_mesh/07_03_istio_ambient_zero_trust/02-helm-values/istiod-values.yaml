@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/02-helm-values/istiod-values.yaml
 profile: ambient
 pilot:
   # 컨트롤 플레인 고가용성 — 최소 2개 replica 자동 유지
@@ -38,7 +39,7 @@ meshConfig:
     envoyFileAccessLog:
       path: /dev/stdout
 
-# 자동 배포되는 waypoint·gateway Pod에 seccompProfile 주입 → PSS restricted 통과
+# 자동 배포되는 waypoint/gateway Pod 템플릿에 seccompProfile 주입 (PSS restricted 통과)
 gateways:
   seccompProfile:
     type: RuntimeDefault

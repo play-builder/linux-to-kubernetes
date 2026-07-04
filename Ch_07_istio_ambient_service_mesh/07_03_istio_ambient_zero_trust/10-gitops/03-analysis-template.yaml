@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/10-gitops/03-analysis-template.yaml
 # Prometheus 성공률 판정 — Rollout(02/08)에 연결되는 자동 게이트
 apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate

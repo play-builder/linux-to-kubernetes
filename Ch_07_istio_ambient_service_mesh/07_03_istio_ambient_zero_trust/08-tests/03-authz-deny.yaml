@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/08-tests/03-authz-deny.yaml
 apiVersion: v1
 kind: Pod
 metadata:

@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/05-waypoint-l7/02-api-l7-authz.yaml
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

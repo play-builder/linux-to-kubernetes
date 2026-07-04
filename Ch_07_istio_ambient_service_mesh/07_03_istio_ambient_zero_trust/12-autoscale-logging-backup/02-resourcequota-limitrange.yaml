@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/12-autoscale-logging-backup/02-resourcequota-limitrange.yaml
 apiVersion: v1
 kind: ResourceQuota
 metadata:

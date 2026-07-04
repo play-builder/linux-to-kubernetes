@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/07-observability/12-alertmanager-routing-values.yaml
 # severity 기반 라우팅 — webhook/키는 자리표시자: 커밋 전 Secret 관리로 대체
 alertmanager:
   config:

@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/07-observability/04-jaeger-values.yaml
 # chart 4.x는 기본이 All-In-One + in-memory storage이므로
 # storage.type을 명시하지 않습니다(생략 시 자동으로 in-memory).
 # 운영 영구 저장은 storage.type: elasticsearch(또는 cassandra) + 해당 backend 설정.

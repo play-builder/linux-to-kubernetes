@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/07-observability/03-prometheus-alerts.yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

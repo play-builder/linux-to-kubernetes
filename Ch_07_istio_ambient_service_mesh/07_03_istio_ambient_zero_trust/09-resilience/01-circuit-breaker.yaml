@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/09-resilience/01-circuit-breaker.yaml
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:

@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/05-waypoint-l7/04-waypoint-hpa.yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -7,7 +8,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: api-waypoint          # 1-2장에서 실측한 Deployment 이름
+    name: api-waypoint          # istiod가 자동 생성한 Deployment(게이트웨이명과 동일)
   minReplicas: 2                # 가용성 하한 (1개 손실 허용)
   maxReplicas: 5                # 11장 산정식으로 도출·조정
   metrics:
@@ -16,4 +17,4 @@ spec:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 70  # istiod HPA와 동일 기준
+        averageUtilization: 70  # CPU 70% 기준

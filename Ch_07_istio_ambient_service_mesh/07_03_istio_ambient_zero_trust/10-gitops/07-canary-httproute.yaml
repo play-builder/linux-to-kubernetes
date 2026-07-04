@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/10-gitops/07-canary-httproute.yaml
 # canary Service + waypoint가 집행할 가중치 HTTPRoute (mesh parentRef)
 apiVersion: v1
 kind: Service

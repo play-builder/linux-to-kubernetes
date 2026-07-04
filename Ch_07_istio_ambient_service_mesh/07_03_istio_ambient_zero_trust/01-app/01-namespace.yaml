@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/01-app/01-namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:

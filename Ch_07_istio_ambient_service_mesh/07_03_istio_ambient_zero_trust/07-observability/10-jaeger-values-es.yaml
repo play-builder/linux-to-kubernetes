@@ -1,5 +1,8 @@
+# 07_03_istio_ambient_zero_trust/07-observability/10-jaeger-values-es.yaml
 # Jaeger v2 (chart 4.x) — Elasticsearch 백엔드 전환 골격
+# 전제: ES 클러스터가 준비되어 있음 (ECK Operator 등 — 본 실습 범위 밖)
 #
+# ⚠ 주의: Jaeger v2 설정 스키마의 세부 필드는 차트 버전에 따라 다를 수 있음.
 #   이 파일을 그대로 복사하지 말고, 본인 차트 버전의 기본 config 전체 구조를
 #   `helm show values jaegertracing/jaeger --version <버전>`으로 확인해 복제한 뒤
 #   backends 부분만 교체할 것. 배포 전 `helm template`으로 렌더 결과 필수 확인.

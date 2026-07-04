@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/10-gitops/04-app-of-apps.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

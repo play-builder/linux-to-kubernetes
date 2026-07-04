@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/10-gitops/08-rollout-analysis.yaml
 # (02-rollout-canary.yaml의 갱신본 — 분석 연결 + 산정 기반 단계. 최종본)
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout

@@ -1,5 +1,6 @@
+# 07_03_istio_ambient_zero_trust/04-security/03-network-policy.yaml
 # shop 외곽 담장 — mesh 정책과 독립적인 2차 방어 (CNI 커널 집행)
-# 근거: HBONE 수신 포트 15008 + 출발지 Pod IP 보존 (05A §4 실측)
+# 근거: HBONE 수신 포트 15008 + 출발지 Pod IP 보존
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -9,7 +10,7 @@ spec:
   podSelector: {}                  # shop의 모든 Pod에 적용
   policyTypes: ["Ingress"]         # 수신만 통제 → ingress default-deny로 flip
   ingress:
-  # ① mesh 내부(HBONE) — shop Pod 간 + Gateway 대비
+  # 1) mesh 내부(HBONE) — shop Pod 간 + Gateway 대비
   - from:
     - podSelector: {}              # 같은 ns(shop)의 Pod — 이후 waypoint 포함
     - namespaceSelector:
@@ -18,7 +19,7 @@ spec:
     ports:
     - protocol: TCP
       port: 15008                  # HBONE — 편입 Pod의 실제 수신 포트
-  # ② kubelet 헬스 프로브 — ambient가 SNAT한 링크로컬 출발지
+  # 2) kubelet 헬스 프로브 — ambient가 SNAT한 링크로컬 출발지
   - from:
     - ipBlock:
         cidr: 169.254.7.127/32     # istio-cni가 프로브를 이 주소로 변환

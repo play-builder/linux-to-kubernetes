@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/07-observability/13-telemetry-sampling-debug.yaml
 # 장애 조사용 — shop 네임스페이스만 100% 샘플링 (조사 후 반드시 삭제)
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry

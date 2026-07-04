@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/07-observability/08-waypoint-monitor-relabel.yaml
 # waypoint 수집기 강화판 — envoy_* 내부 메트릭 drop (카디널리티 방어)
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
@@ -18,11 +19,11 @@ spec:
     path: /stats/prometheus
     interval: 15s
     metricRelabelings:
-    # ① Envoy 내부 메트릭 전체 차단 (대시보드/알람 미사용)
+    # 1) Envoy 내부 메트릭 전체 차단 (대시보드/알람 미사용)
     - sourceLabels: [__name__]
       regex: "envoy_.*"
       action: drop
-    # ② (선택) 지연 히스토그램 유지가 부담이면 요약 지표만 남기고 drop
+    # 2) (선택) 지연 히스토그램 유지가 부담이면 요약 지표만 남기고 drop
     #    P99 알람을 쓰는 동안은 _bucket을 유지해야 하므로 기본 주석 처리
     # - sourceLabels: [__name__]
     #   regex: "istio_request_duration_milliseconds_bucket"

@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/05-waypoint-l7/01-api-waypoint.yaml
 # api 서비스용 Waypoint Proxy
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -6,12 +7,6 @@ metadata:
   namespace: shop
   labels:
     istio.io/waypoint-for: service    # 서비스 대상 waypoint
-  annotations:
-    # 생성될 waypoint Pod의 리소스 지정 (Istio 프록시 리소스 주석)
-    sidecar.istio.io/proxyCPU: "500m"
-    sidecar.istio.io/proxyMemory: "512Mi"
-    sidecar.istio.io/proxyCPULimit: "2"
-    sidecar.istio.io/proxyMemoryLimit: "1Gi"
 spec:
   gatewayClassName: istio-waypoint    # ambient waypoint 전용 클래스
   listeners:

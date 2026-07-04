@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/04-security/01-peer-authentication.yaml
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:

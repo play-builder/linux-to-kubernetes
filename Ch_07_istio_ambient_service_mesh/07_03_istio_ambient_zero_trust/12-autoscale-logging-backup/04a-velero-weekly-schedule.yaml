@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/12-autoscale-logging-backup/04a-velero-weekly-schedule.yaml
 # (신규 — 주간 장기 보관 백업: 일일 백업과 세대 혼합)
 apiVersion: velero.io/v1
 kind: Schedule

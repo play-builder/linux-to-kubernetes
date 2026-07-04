@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/07-observability/02-istio-servicemonitors.yaml
 # istiod 메트릭 (Service 기반)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

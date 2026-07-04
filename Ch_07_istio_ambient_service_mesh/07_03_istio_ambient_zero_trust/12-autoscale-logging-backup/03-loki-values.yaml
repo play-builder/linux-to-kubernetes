@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/12-autoscale-logging-backup/03-loki-values.yaml
 # (보강판 — Loki 3.7.x, grafana-community/loki 차트 기준, SingleBinary + retention/compactor)
 # 적용 전 helm show values grafana-community/loki 로 차트 버전별 스키마 확인 권장
 deploymentMode: SingleBinary          # 실습/소규모: 단일 프로세스 모드
@@ -27,7 +28,7 @@ singleBinary:
   replicas: 1
   persistence:
     enabled: true
-    size: 20Gi
+    size: 20Gi                        # 로그량×보관기간 기준으로 산정
 # SingleBinary 모드에서는 분산 컴포넌트를 0으로 고정
 read:
   replicas: 0

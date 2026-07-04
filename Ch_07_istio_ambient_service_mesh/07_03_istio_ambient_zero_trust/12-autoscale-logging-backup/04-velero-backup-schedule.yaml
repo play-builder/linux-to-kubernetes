@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/12-autoscale-logging-backup/04-velero-backup-schedule.yaml
 # 선행: velero install 완료 + BackupStorageLocation(default)이 Available 상태여야 함
 apiVersion: velero.io/v1
 kind: Schedule

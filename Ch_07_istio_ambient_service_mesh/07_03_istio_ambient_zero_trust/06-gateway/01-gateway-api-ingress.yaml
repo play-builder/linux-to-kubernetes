@@ -1,3 +1,5 @@
+# 07_03_istio_ambient_zero_trust/06-gateway/01-gateway-api-ingress.yaml
+# 주의: mesh 밖 Gateway(ingress) 트래픽은 기본적으로 목적지 waypoint를 경유하지 않음
 # 경유 조건: Gateway 라벨 istio.io/ingress-use-waypoint=true + istiod env ENABLE_INGRESS_WAYPOINT_ROUTING
 # 본 실습 성립 근거: frontend→api(mesh 내부) 구간은 frontend의 ztunnel이 api waypoint로 전달
 # istio-ingress 네임스페이스 (+ ambient 편입 라벨)

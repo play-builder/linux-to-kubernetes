@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/09-resilience/optional/90-retry-virtualservice-alpha.yaml
 # ⚠ 경고 — 비교/실험 전용 (운영 표준 아님)
 # - Ambient waypoint에서 VirtualService는 Istio 1.30 기준 Alpha.
 # - Gateway API 설정과 혼용 시 공식 미지원(undefined behavior).

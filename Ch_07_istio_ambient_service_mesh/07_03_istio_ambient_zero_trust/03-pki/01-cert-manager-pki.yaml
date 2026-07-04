@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/03-pki/01-cert-manager-pki.yaml
 # (1) self-signed Root Issuer — 조직 최상위 CA 역할
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer

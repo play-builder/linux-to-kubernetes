@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/07-observability/01-prometheus-values.yaml
 fullnameOverride: kube-prom
 prometheus:
   # Prometheus UI 외부 노출 (AWS SSM: 워커 퍼블릭 IP:30090)

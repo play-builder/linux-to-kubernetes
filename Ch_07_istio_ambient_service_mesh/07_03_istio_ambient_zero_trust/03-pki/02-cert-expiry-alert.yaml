@@ -1,3 +1,6 @@
+# 07_03_istio_ambient_zero_trust/03-pki/02-cert-expiry-alert.yaml
+# 사전 조건: kube-prometheus-stack 설치(PrometheusRule CRD 필요)
+# 주의: namespace와 release 라벨은 Prometheus 설치 값에 맞춰 조정
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

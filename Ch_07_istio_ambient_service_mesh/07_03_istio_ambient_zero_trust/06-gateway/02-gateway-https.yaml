@@ -1,4 +1,5 @@
-# (1) Gateway 서버 인증서 — PKI(root-ca-issuer) 재사용
+# 07_03_istio_ambient_zero_trust/06-gateway/02-gateway-https.yaml
+# (1) Gateway 서버 인증서 — 기존 PKI(root-ca-issuer) 재사용
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

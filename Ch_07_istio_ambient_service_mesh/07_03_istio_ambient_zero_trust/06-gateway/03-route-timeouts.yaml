@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/06-gateway/03-route-timeouts.yaml
 # frontend-route 최종본 — request/backendRequest 타임아웃 명시 (02의 (4) 갱신본)
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/12-autoscale-logging-backup/01-app-hpa.yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

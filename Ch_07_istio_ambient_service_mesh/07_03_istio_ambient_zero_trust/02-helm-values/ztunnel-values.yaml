@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/02-helm-values/ztunnel-values.yaml
 profile: ambient
 logLevel: warn
 env:

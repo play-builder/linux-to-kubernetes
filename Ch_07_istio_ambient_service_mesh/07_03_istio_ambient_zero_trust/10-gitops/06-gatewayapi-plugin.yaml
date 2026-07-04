@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/10-gitops/06-gatewayapi-plugin.yaml
 # gatewayAPI 트래픽 플러그인 선언 + HTTPRoute 편집 RBAC
 apiVersion: v1
 kind: ConfigMap

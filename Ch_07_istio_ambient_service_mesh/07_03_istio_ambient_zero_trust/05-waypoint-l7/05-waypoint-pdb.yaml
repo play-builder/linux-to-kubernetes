@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/05-waypoint-l7/05-waypoint-pdb.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

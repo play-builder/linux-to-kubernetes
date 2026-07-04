@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/01-app/01b-regcred.yaml
 # 생성 방법: kubectl create secret docker-registry regcred \
 #   --docker-server=<REGISTRY_SERVER> \
 #   --docker-username=<REGISTRY_USERNAME> \

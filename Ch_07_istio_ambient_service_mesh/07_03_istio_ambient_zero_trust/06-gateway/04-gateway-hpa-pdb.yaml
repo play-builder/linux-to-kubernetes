@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/06-gateway/04-gateway-hpa-pdb.yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -7,7 +8,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: shop-gateway-istio      # 5장 ②-2에서 실측한 이름
+    name: shop-gateway-istio      # 자동 생성된 Deployment 이름(실측값으로 교체)
   minReplicas: 2                  # 정문은 최소 2 (1개 손실 허용)
   maxReplicas: 5
   metrics:

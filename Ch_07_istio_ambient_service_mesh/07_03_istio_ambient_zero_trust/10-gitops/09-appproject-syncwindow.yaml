@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/10-gitops/09-appproject-syncwindow.yaml
 # (10A 03-appproject-shop.yaml의 갱신본 — 금지 시간대 추가. 최종본)
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject

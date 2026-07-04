@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/10-gitops/05-presync-db-migration.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:

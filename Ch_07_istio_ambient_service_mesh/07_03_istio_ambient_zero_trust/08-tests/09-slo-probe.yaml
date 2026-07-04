@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/08-tests/09-slo-probe.yaml (PROD 추가)
 apiVersion: v1
 kind: Pod
 metadata:
@@ -10,7 +11,7 @@ spec:
     kubernetes.io/hostname: wk2   # 관측자는 훈련 대상 밖 노드에 고정
   containers:
   - name: probe
-    image: playbuilder/netshoot:latest   # 운영은 digest 고정
+    image: playbuilder/netshoot:latest   # 운영은 digest 고정 권장
     command: ["sh", "-c",
       "ok=0; ko=0; for i in $(seq 1 120); do \
          c=$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 \

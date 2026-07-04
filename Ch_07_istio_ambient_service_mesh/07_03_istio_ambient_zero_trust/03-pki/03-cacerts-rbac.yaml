@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/03-pki/03-cacerts-rbac.yaml
 # PKI 운영자 전용 — cacerts·원본 Secret에 한정한 최소권한
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

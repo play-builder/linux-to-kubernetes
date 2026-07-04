@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/07-observability/05-telemetry.yaml
 # mesh 전체 추적 활성화
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry

@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/05-waypoint-l7/03-shop-access-logging.yaml
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
@@ -6,4 +7,4 @@ metadata:
 spec:
   accessLogging:
   - providers:
-    - name: envoy-accesslog      # istiod values에 정의한 provider
+    - name: envoy-accesslog      # istiod values(extensionProviders)에 정의한 이름과 일치 필수

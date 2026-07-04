@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/06-gateway/05-metallb-pool.yaml (온프렘 선택)
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:

@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/09-resilience/03-retry-guard.yaml
 # (01-circuit-breaker.yaml의 갱신본 — maxRetries 추가. 이 파일이 최종본)
 apiVersion: networking.istio.io/v1
 kind: DestinationRule

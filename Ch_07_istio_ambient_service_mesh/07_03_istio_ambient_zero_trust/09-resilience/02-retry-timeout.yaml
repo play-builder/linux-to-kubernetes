@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/09-resilience/02-retry-timeout.yaml
 # 운영 표준 — Gateway API HTTPRoute
 # (ambient waypoint의 공식 L7 구성 API — istio.io ambient l7-features)
 # timeouts.request/backendRequest는 Gateway API 표준 필드.

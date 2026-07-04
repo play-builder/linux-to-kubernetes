@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/04-security/optional/99-bad-l7-on-selector.yaml
 # ⚠⚠ 교육용 오류 재현 — 운영 적용 금지 ⚠⚠
 # ⚠ 사고 재현 전용 — 운영 적용 금지, 폴더 일괄 적용 대상에서 제외(optional/)
 # selector(ztunnel 처리) + L7 필드(methods/paths) 혼재 → fail-safe DENY

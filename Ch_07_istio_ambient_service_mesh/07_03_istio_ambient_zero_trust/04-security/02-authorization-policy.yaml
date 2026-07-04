@@ -1,3 +1,4 @@
+# 07_03_istio_ambient_zero_trust/04-security/02-authorization-policy.yaml
 # frontend → api 만 허용 (L4 only — principals + ports)
 # api 워크로드에 ALLOW가 생기는 순간, api는 명시 허용만 통과(default-deny)
 apiVersion: security.istio.io/v1
