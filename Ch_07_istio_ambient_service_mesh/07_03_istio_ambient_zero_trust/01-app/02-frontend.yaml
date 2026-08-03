@@ -1,4 +1,4 @@
-# 07_03_istio_ambient_zero_trust/01-app/02-frontend.yaml
+# 02-frontend.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -21,40 +21,14 @@ spec:
         app: frontend
     spec:
       serviceAccountName: frontend
-      terminationGracePeriodSeconds: 30          # 종료 예산 명시
-      topologySpreadConstraints:                  # 노드 분산 계약
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: ScheduleAnyway
-        labelSelector:
-          matchLabels: { app: frontend }
       containers:
       - name: frontend
-        # 운영 원칙: tag@digest 병기 (본인 digest로 교체)
-        image: playbuilder/shop-frontend:v1.1.0@sha256:34ea908b39d0e7c1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5
+        image: playbuilder/shop-frontend:v1.1.0@sha256:47ee8c0b0f0ff6c1f391cd9de18f646ad1918920a0f6987558c440a52eee566a
         ports:
-        - name: http
-          containerPort: 8080
+        - containerPort: 8080
         resources:
-          requests: { cpu: 50m, memory: 64Mi }   # HPA 기준값 — 실측 보정 대상
-          limits:   { memory: 128Mi }            # CPU limit 미설정은 의도
-        startupProbe:                             # 부팅 30s 보호
-          httpGet: { path: /healthz, port: 8080 }
-          periodSeconds: 2
-          failureThreshold: 15
-        livenessProbe:                            # 보수적 재시작
-          httpGet: { path: /healthz, port: 8080 }
-          periodSeconds: 10
-          timeoutSeconds: 2
-          failureThreshold: 3
-        readinessProbe:                           # 민감한 트래픽 차단
-          httpGet: { path: /healthz, port: 8080 }
-          periodSeconds: 5
-          failureThreshold: 2
-          successThreshold: 1
-        lifecycle:                                # 엔드포인트 전파 대기
-          preStop:
-            sleep: { seconds: 5 }
+          requests: { cpu: 50m, memory: 64Mi }
+          limits:   { memory: 128Mi }
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true

@@ -1,4 +1,4 @@
-# 07_03_istio_ambient_zero_trust/01-app/03-api.yaml
+# 03-api.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -30,8 +30,7 @@ spec:
           matchLabels: { app: api }
       containers:
       - name: api
-        # 운영 원칙: tag@digest 병기 (본인 digest로 교체)
-        image: playbuilder/shop-api:v1.1.0@sha256:83bbe2ab2966f1e2d3c4b5a6978869504132231405f6e7d8c9b0a1f2e3d4c5b6
+        image: playbuilder/shop-api:v1.1.0@sha256:7b2dc2836a6c7e21c29b5b74bc22e468a483907b787edbf0908b372f7e747819
         ports:
         - name: http
           containerPort: 8080
