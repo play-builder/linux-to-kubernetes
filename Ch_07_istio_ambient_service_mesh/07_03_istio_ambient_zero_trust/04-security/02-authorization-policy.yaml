@@ -16,7 +16,8 @@ spec:
     - source:
         # SPIFFE 신원 기반 — IP가 아닌 신원으로 식별
         principals:
-        - cluster.local/ns/shop/sa/frontend
+        - cluster.local/ns/shop/sa/frontend      # 편입 전: frontend의 직접 호출 신원
+        - cluster.local/ns/shop/sa/api-waypoint  # 편입 후: waypoint 경유 인바운드 신원 (Step-29 갱신 지점)
     to:
     - operation:
         # L4 필드만 (포트). method/path는 이후 waypoint에서.
