@@ -108,6 +108,7 @@ kubectl apply -f "$METRICS_YAML"
 echo "=== Metrics Server installation initiated at $(date) ==="
 
 kubeadm token create --print-join-command > /home/ubuntu/join-command.sh
-chmod 644 /home/ubuntu/join-command.sh
+chmod 600 /home/ubuntu/join-command.sh
+chown ubuntu:ubuntu /home/ubuntu/join-command.sh
 
 echo "=== Bootstrap completed at $(date) ==="
