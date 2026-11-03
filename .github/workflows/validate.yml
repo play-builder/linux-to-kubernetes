@@ -1,0 +1,40 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: Ch_00_K8s_Kubeadm_Project_Setup
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
+  manifests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: kubeconform
+        run: |
+          go install github.com/yannh/kubeconform/cmd/kubeconform@v0.7.0
+          # Helm values 파일은 Kubernetes 매니페스트가 아니므로 제외
+          git ls-files '*.yaml' '*.yml' \
+            | grep -Ev '^\.github/|-values/|(^|/)[^/]*values[^/]*\.ya?ml$' \
+            | xargs "$(go env GOPATH)/bin/kubeconform" -strict -ignore-missing-schemas -summary
+      - name: shellcheck
+        run: git ls-files '*.sh' | xargs --no-run-if-empty shellcheck -s bash -S error
